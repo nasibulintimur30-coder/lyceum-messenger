@@ -15,6 +15,12 @@
     <link rel="stylesheet" href="/css/app.css" />
   </head>
   <body>
+    <!-- Предупреждение о недоступном бэкенде (видно на любом экране) -->
+    <div id="backend-warning" class="warning" hidden>
+      <strong>Бэкенд не подключён</strong>
+      <span id="backend-warning-text"></span>
+    </div>
+
     <!-- ============================ Экран входа ============================ -->
     <section id="screen-auth" class="screen screen--auth">
       <div class="auth-card">
@@ -78,10 +84,6 @@
 
     <!-- ============================== Приложение ============================== -->
     <main id="screen-app" class="screen screen--app" hidden>
-      <div id="backend-warning" class="warning" hidden>
-        <strong>Бэкенд не подключён</strong>
-        <span id="backend-warning-text"></span>
-      </div>
       <!-- Боковая панель -->
       <aside id="sidebar" class="sidebar">
         <header class="sidebar__head">

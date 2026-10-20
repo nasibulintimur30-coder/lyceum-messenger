@@ -2,9 +2,11 @@ node_modules/
 server/data/
 server/data/uploads/*
 !server/data/uploads/.gitkeep
-web/vendor/
 .env
 .env.*
 *.log
 .DS_Store
 Thumbs.db
+
+# web/vendor/ НЕ игнорируется: клиент socket.io нужен на хостинге,
+# где нет node_modules. Обновляется командой `npm run sync-client`.

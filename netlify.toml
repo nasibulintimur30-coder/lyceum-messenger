@@ -1,6 +1,10 @@
 # Конфигурация деплоя на Netlify.
-# Фронтенд — статические файлы из папки web/, сборка не нужна.
-# Бэкенд (server/) хостится отдельно — см. README, раздел «Деплой».
+#
+# Фронтенд — статические файлы из папки web/, сборка не нужна:
+# иконки и клиент socket.io уже лежат в репозитории (обновляются
+# командами `npm run icons` и `npm run sync-client`).
+#
+# Адрес бэкенда задаётся в web/config.js.
 
 [build]
   publish = "web"
@@ -12,7 +16,15 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
 
+# Service worker должен обновляться сразу, иначе пользователи
+# останутся на старой версии приложения
 [[headers]]
   for = "/sw.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Клиент socket.io меняется редко — можно кешировать подольше
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

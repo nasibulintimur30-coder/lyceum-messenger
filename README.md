@@ -30,6 +30,9 @@ npm install        # поставит зависимости сервера (pos
 npm start          # http://localhost:3000
 ```
 
+Сервер автоматически читает `.env` (если файл есть) — шаблон в `.env.example`.
+Скопируйте его и заполните `JWT_SECRET` и `CORS_ORIGIN`.
+
 Для разработки с автоперезапуском:
 
 ```bash
@@ -107,9 +110,8 @@ Project2/
 ## Тесты
 
 ```bash
-cd server
-npm test           # REST API (47) + realtime Socket.IO (11)
-npm run test:ui    # интерфейс в настоящем Chrome (12)
+npm test           # REST API (55) + realtime Socket.IO (11)
+npm run test:ui    # интерфейс в настоящем Chrome (27)
 npm run test:cross # фронтенд и бэкенд на разных доменах (7)
 ```
 

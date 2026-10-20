@@ -1,10 +1,23 @@
 # Деплой: фронтенд на Netlify, бэкенд на Node-хосте
 
+## Готовые команды проекта
+
+```bash
+npm start          # запуск сервера (сам подхватывает .env)
+npm run dev        # запуск с автоперезапуском
+npm run build      # иконки + клиент socket.io → готовый web/ для заливки
+npm test           # тесты API и realtime
+npm run test:ui    # тест интерфейса в Chrome
+npm run test:cross # тест раздельных доменов
+npm run deploy     # сборка + заливка фронтенда на Netlify
+```
+
 ## Быстрый старт (5 минут, бесплатно)
 
 ```powershell
 # 1. Статика для Netlify: иконки + локальная копия клиента socket.io
 cd D:\Projects\Project2
+npm install
 npm run build
 
 # 2. Задеплоить фронтенд на Netlify (через drag&drop)
@@ -21,12 +34,55 @@ notepad D:\Projects\Project2\web\config.js
 #    apiBase: 'https://что-то.trycloudflare.com'
 
 # 5. Перезалить фронтенд с новым адресом
-npm run build
-netlify deploy --dir web --prod
+npm run deploy
 ```
 
 Готово: открываете адрес Netlify на любом устройстве, заходите под одним логином —
 и переписываетесь. Подробности и постоянные адреса — ниже.
+
+## Деплой по репозиторию (Git → Netlify)
+
+Самый удобный способ: Netlify сам передеплоит проект при каждом `git push`.
+
+**1. Создать репозиторий на GitHub** (пустой, без README) и привязать локальный:
+
+```powershell
+cd D:\Projects\Project2
+git remote add origin https://github.com/<ваш-логин>/neon-messenger.git
+git push -u origin main
+```
+
+Если GitHub попросит пароль — нужен [Personal Access Token](https://github.com/settings/tokens),
+обычный пароль не работает.
+
+**2. Подключить репозиторий к Netlify**
+
+1. <https://app.netlify.com> → **Add new site** → **Import an existing project**
+2. Выбрать репозиторий `neon-messenger`
+3. Build settings:
+   - Build command: оставить пустым
+   - Publish directory: `web`
+4. **Deploy site**
+
+`netlify.toml` уже содержит эти настройки, так что поля можно не трогать.
+
+**3. Прописать адрес бэкенда** в `web/config.js` и закоммитить:
+
+```powershell
+notepad D:\Projects\Project2\web\config.js
+git add web/config.js
+git commit -m "Указан адрес бэкенда"
+git push
+```
+
+Netlify передеплоит сайт автоматически.
+
+**4. Домен Netlify** → Site settings → Change site name → например `neon-messenger`.
+Потом впишите его в `CORS_ORIGIN` на бэкенде:
+
+```ini
+CORS_ORIGIN=https://neon-messenger.netlify.app
+```
 
 ## Почему нельзя задеплоить всё на Netlify
 

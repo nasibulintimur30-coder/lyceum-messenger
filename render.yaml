@@ -1,0 +1,34 @@
+# Блюпринт для Render.com: https://render.com/docs/blueprint-spec
+#
+# Подключение: New → Blueprint → указать репозиторий с этим файлом.
+# Render соберёт Docker-образ и выдаст публичный адрес вида
+# https://neon-messenger.onrender.com — его нужно вписать в apiBase
+# в файле web/config.js.
+#
+# ВАЖНО: на бесплатном тарифе диск эфемерный, база SQLite будет стираться
+# при каждом перезапуске. Для постоянных данных нужен платный инстанс
+# с диском (disk: в разделе disk) или внешняя база.
+
+services:
+  - type: web
+    name: neon-messenger
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: HOST
+        value: 0.0.0.0
+      - key: JWT_SECRET
+        generateValue: true
+      # Домен фронтенда на Netlify — впишите свой
+      - key: CORS_ORIGIN
+        value: https://example.netlify.app
+    disk:
+      name: neon-data
+      mountPath: /app/server/data
+      sizeGB: 1

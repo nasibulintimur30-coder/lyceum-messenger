@@ -1,0 +1,22 @@
+# Запуск на сервере: docker compose up -d
+# Данные (SQLite + загруженные картинки) лежат в volume neon_data.
+
+services:
+  neon:
+    build: .
+    container_name: neon-messenger
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      # ОБЯЗАТЕЛЬНО задайте свой секрет: openssl rand -hex 32
+      JWT_SECRET: "${JWT_SECRET:?задайте JWT_SECRET}"
+      # Список доменов фронтенда через запятую, либо * для любых
+      CORS_ORIGIN: "${CORS_ORIGIN:-*}"
+    volumes:
+      - neon_data:/app/server/data
+
+volumes:
+  neon_data:

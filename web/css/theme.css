@@ -1,0 +1,417 @@
+/* ============================================================
+   Neon Messenger — дизайн-токены и базовые элементы
+   Тёмная база + акцентные градиенты + стеклянные поверхности
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* Фон и глубина */
+  --bg: #06070c;
+  --bg-soft: #0a0c15;
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-2: rgba(255, 255, 255, 0.085);
+  --glass-3: rgba(255, 255, 255, 0.13);
+  --stroke: rgba(255, 255, 255, 0.09);
+  --stroke-2: rgba(255, 255, 255, 0.17);
+
+  /* Текст */
+  --text: #eaeefb;
+  --text-2: #a3acc4;
+  --text-3: #6b7490;
+
+  /* Состояния */
+  --ok: #35e0a1;
+  --warn: #ffc46b;
+  --danger: #ff5d7a;
+
+  /* Акценты (переопределяются через [data-accent]) */
+  --a1: #7c5cff;
+  --a2: #22d3ee;
+  --a3: #ff4d9d;
+  --grad: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+  --grad-soft: linear-gradient(135deg, rgba(124, 92, 255, 0.22), rgba(34, 211, 238, 0.14));
+
+  /* Радиусы */
+  --r-xl: 28px;
+  --r-lg: 22px;
+  --r-md: 16px;
+  --r-sm: 11px;
+  --r-pill: 999px;
+
+  /* Тени и свечения */
+  --shadow-1: 0 10px 30px -14px rgba(0, 0, 0, 0.85);
+  --shadow-2: 0 34px 80px -34px rgba(0, 0, 0, 0.95);
+  --glow: 0 10px 34px -14px rgba(124, 92, 255, 0.85);
+  --blur: blur(22px) saturate(150%);
+
+  /* Движение */
+  --ease: cubic-bezier(0.22, 0.9, 0.28, 1);
+  --dur: 0.28s;
+
+  /* Безопасные зоны (iOS) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Размеры */
+  --sidebar-w: 340px;
+  --header-h: 68px;
+}
+
+[data-accent='neon'] {
+  --a1: #7c5cff;
+  --a2: #22d3ee;
+  --a3: #ff4d9d;
+  --grad-soft: linear-gradient(135deg, rgba(124, 92, 255, 0.24), rgba(34, 211, 238, 0.16));
+}
+[data-accent='ocean'] {
+  --a1: #2f6bff;
+  --a2: #22d3ee;
+  --a3: #5eead4;
+  --grad-soft: linear-gradient(135deg, rgba(47, 107, 255, 0.26), rgba(34, 211, 238, 0.16));
+}
+[data-accent='sunset'] {
+  --a1: #ff4d9d;
+  --a2: #ff9f43;
+  --a3: #ffd166;
+  --grad-soft: linear-gradient(135deg, rgba(255, 77, 157, 0.26), rgba(255, 159, 67, 0.16));
+}
+[data-accent='mint'] {
+  --a1: #00c99a;
+  --a2: #7bf59d;
+  --a3: #38bdf8;
+  --grad-soft: linear-gradient(135deg, rgba(0, 201, 154, 0.24), rgba(56, 189, 248, 0.16));
+}
+[data-accent='mono'] {
+  --a1: #7d879e;
+  --a2: #cfd6e4;
+  --a3: #98a2b8;
+  --grad-soft: linear-gradient(135deg, rgba(125, 135, 158, 0.26), rgba(207, 214, 228, 0.12));
+}
+
+/* ------------------------------------------------------------ Светлая тема */
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #eef1f8;
+  --bg-soft: #f6f8fc;
+  --glass: rgba(17, 24, 45, 0.04);
+  --glass-2: rgba(17, 24, 45, 0.07);
+  --glass-3: rgba(17, 24, 45, 0.12);
+  --stroke: rgba(17, 24, 45, 0.11);
+  --stroke-2: rgba(17, 24, 45, 0.2);
+
+  --text: #151d33;
+  --text-2: #4b5673;
+  --text-3: #7d89a5;
+
+  --ok: #0f9d72;
+  --warn: #b8791a;
+  --danger: #d93a5b;
+
+  --shadow-1: 0 10px 28px -18px rgba(22, 30, 60, 0.45);
+  --shadow-2: 0 30px 70px -40px rgba(22, 30, 60, 0.5);
+  --glow: 0 10px 28px -16px rgba(124, 92, 255, 0.5);
+  --blur: blur(20px) saturate(140%);
+}
+
+[data-theme='light'] body::before {
+  opacity: 0.5;
+}
+
+[data-theme='light'] .field__input,
+[data-theme='light'] .composer__input {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text);
+}
+
+[data-theme='light'] .field__input::placeholder,
+[data-theme='light'] .composer__input::placeholder {
+  color: var(--text-3);
+}
+
+/* ------------------------------------------------------------- Сброс */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: -30% -10% auto -10%;
+  height: 70vh;
+  background:
+    radial-gradient(50% 60% at 20% 20%, rgba(124, 92, 255, 0.22), transparent 70%),
+    radial-gradient(45% 55% at 80% 10%, rgba(34, 211, 238, 0.16), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.muted {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: rgba(124, 92, 255, 0.4);
+}
+
+:focus-visible {
+  outline: 2px solid var(--a2);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ Скроллбар */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--glass-3);
+  border-radius: var(--r-pill);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* -------------------------------------------------------------- Кнопки */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--glass);
+  color: var(--text);
+  font-weight: 550;
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease), background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.btn:hover {
+  background: var(--glass-2);
+  border-color: var(--stroke-2);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--primary {
+  background: var(--grad);
+  border-color: transparent;
+  color: #08090f;
+  box-shadow: var(--glow);
+}
+
+.btn--primary:hover {
+  filter: brightness(1.08);
+  background: var(--grad);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-2);
+}
+
+.btn--ghost:hover {
+  color: var(--text);
+  background: var(--glass);
+}
+
+.btn--danger {
+  border-color: rgba(255, 93, 122, 0.4);
+  color: var(--danger);
+  background: rgba(255, 93, 122, 0.1);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 17px;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.icon-btn:hover {
+  background: var(--glass-2);
+  color: var(--text);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* Иконки внутри кнопок: тонкие линии, цвет берётся от кнопки */
+.icon-btn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* -------------------------------------------------------------- Поля */
+
+.field {
+  display: block;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.field__input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: rgba(8, 10, 18, 0.6);
+  color: var(--text);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.field__input::placeholder {
+  color: var(--text-3);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: rgba(124, 92, 255, 0.65);
+  background: rgba(8, 10, 18, 0.85);
+  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.14);
+}
+
+/* ------------------------------------------------------------ Аватары */
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-pill);
+  background: var(--grad-soft);
+  color: var(--text);
+  font-weight: 650;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.avatar:hover {
+  transform: scale(1.04);
+}
+
+.avatar--lg {
+  width: 46px;
+  height: 46px;
+  font-size: 16px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar--online {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ok);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  box-shadow: 0 0 10px var(--ok);
+  flex: 0 0 auto;
+}
+
+.dot--off {
+  background: var(--text-3);
+  box-shadow: none;
+}

@@ -1,0 +1,8 @@
+node_modules
+server/node_modules
+server/data
+.git
+*.log
+.env
+README.md
+DEPLOY.md

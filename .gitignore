@@ -10,3 +10,6 @@ Thumbs.db
 
 # web/vendor/ НЕ игнорируется: клиент socket.io нужен на хостинге,
 # где нет node_modules. Обновляется командой `npm run sync-client`.
+
+# Local Netlify folder
+.netlify

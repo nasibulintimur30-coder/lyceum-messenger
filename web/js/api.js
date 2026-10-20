@@ -4,7 +4,12 @@
  * Токен хранится в localStorage и автоматически подставляется в заголовок
  * Authorization. Ответы с ошибкой превращаются в Error с текстом от сервера.
  *
- * Адрес бэкенда берётся из web/config.js (window.LYCEUM_CONFIG.apiBase).
+ * Адрес бэкенда определяется по порядку:
+ *   1. параметр ?api=… в адресе страницы (явный выбор, сохраняется);
+ *   2. адрес, сохранённый ранее в localStorage;
+ *   3. web/config.js (window.LYCEUM_CONFIG.apiBase);
+ *   4. на localhost — тот же хост (локальная разработка).
+ *
  * Если фронтенд и бэкенд на одном домене — оставляем пустым.
  */
 
@@ -12,23 +17,30 @@ const TOKEN_KEY = 'lyceum.token';
 const BASE_KEY = 'lyceum.apiBase';
 
 const CONFIG = window.LYCEUM_CONFIG || {};
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', '::1'];
 
 /** Читает и запоминает адрес бэкенда: config.js, query-параметр или localStorage. */
 function resolveBase() {
   let stored = '';
+  let fromQuery = '';
+
   try {
-    const fromQuery = new URLSearchParams(location.search).get('api');
-    if (fromQuery) {
-      localStorage.setItem(BASE_KEY, fromQuery);
-      stored = fromQuery;
-    } else {
-      stored = localStorage.getItem(BASE_KEY) || '';
-    }
+    fromQuery = new URLSearchParams(location.search).get('api') || '';
+    if (fromQuery) localStorage.setItem(BASE_KEY, fromQuery);
+    else stored = localStorage.getItem(BASE_KEY) || '';
   } catch {
     /* приватный режим — используем только config.js */
   }
 
-  return (stored || CONFIG.apiBase || '').replace(/\/+$/, '');
+  const clean = (value) => String(value || '').replace(/\/+$/, '');
+
+  if (fromQuery) return clean(fromQuery);
+  if (stored) return clean(stored);
+
+  // Локально сервер запущен рядом — идём на тот же хост
+  if (LOCAL_HOSTS.includes(location.hostname)) return '';
+
+  return clean(CONFIG.apiBase);
 }
 
 /** Адрес бэкенда без слеша на конце. */
@@ -80,13 +92,23 @@ async function request(method, path, body) {
 
   const response = await fetch(API_BASE + path, { method, headers, body: payload });
   const text = await response.text();
+  const contentType = response.headers.get('content-type') || '';
 
   let data = {};
+
   if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { error: text };
+    if (contentType.includes('json')) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: 'Сервер вернул некорректный JSON' };
+      }
+    } else {
+      // HTML вместо JSON — значит, запрос ушёл не на бэкенд,
+      // а на хостинг статики, который отдал SPA-заглушку.
+      throw new Error(
+        'Сервер вернул не JSON. Похоже, адрес бэкенда не задан — укажите его в web/config.js (apiBase).'
+      );
     }
   }
 

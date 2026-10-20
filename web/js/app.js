@@ -46,6 +46,7 @@ async function enterApp(user) {
   renderMe();
 
   connectSocket(getToken());
+  checkBackend();
 
   try {
     // Ответы приходят объектами { chats: [...] } и { contacts: [...] }
@@ -71,7 +72,38 @@ function logout() {
   toast('Вы вышли из аккаунта');
 }
 
-/* -------------------------------------------------------------- старт */
+/* ------------------------------------------------------- проверка бэкенда */
+
+/** Показывает плашку, если бэкенд недоступен или не настроен. */
+function showWarning(message) {
+  const box = qs('#backend-warning');
+  const text = qs('#backend-warning-text');
+  if (!box || !text) return;
+  text.textContent = message;
+  box.hidden = false;
+}
+
+function hideWarning() {
+  const box = qs('#backend-warning');
+  if (box) box.hidden = true;
+}
+
+/** Проверяет, что бэкенд отвечает и отдаёт JSON. */
+async function checkBackend() {
+  try {
+    await api.config();
+    hideWarning();
+    return true;
+  } catch (error) {
+    showWarning(
+      error.message ||
+        'Бэкенд недоступен. Укажите его адрес в web/config.js (apiBase) и перезалейте сайт.'
+    );
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------- старт */
 
 function init() {
   // Тема из этого браузера — чтобы экран входа не мигал другой оформлением
@@ -105,6 +137,7 @@ function init() {
   const token = getToken();
   if (!token) {
     showAuthScreen();
+    checkBackend();
     return;
   }
 

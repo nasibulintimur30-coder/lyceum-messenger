@@ -8,15 +8,16 @@
     "start": "node --env-file-if-exists=.env server/src/index.js",
     "dev": "node --watch --env-file-if-exists=.env server/src/index.js",
     "postinstall": "npm --prefix server install && node tools/sync-client.mjs",
-    "build": "node tools/make-icons.mjs && node tools/sync-client.mjs",
+    "build": "node tools/build.mjs",
     "icons": "node tools/make-icons.mjs",
     "sync-client": "node tools/sync-client.mjs",
+    "tunnel": "node tools/tunnel-watch.mjs",
     "test": "npm --prefix server test",
     "test:ui": "npm --prefix server run test:ui",
     "test:cross": "npm --prefix server run test:cross",
-    "deploy": "npm run build && netlify deploy --dir web --prod",
+    "deploy": "npm run build && netlify deploy --prod",
     "deploy:init": "netlify init --dir web",
-    "deploy:link": "netlify link --dir web"
+    "deploy:link": "netlify link --id c7800275-7fdd-47ce-8fb1-04dc836fb7bf"
   },
   "engines": {
     "node": ">=22.5.0"

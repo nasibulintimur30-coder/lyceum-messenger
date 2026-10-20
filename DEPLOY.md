@@ -1,5 +1,31 @@
 # Деплой: фронтенд на Netlify, бэкенд на Node-хосте
 
+## Самый простой бесплатный путь (3 шага)
+
+Поднять всё на бесплатном VPS (Oracle Cloud Always Free — 1 ГБ RAM навсегда
+бесплатно) одной командой-скриптом. Подробности — в разделе «Вариант B».
+
+```powershell
+# 1. Загрузить проект на сервер (из PowerShell на своём ПК)
+scp -r D:\Projects\Project2 ubuntu@<IP-СЕРВЕРА>:/tmp/lyceum
+
+# 2. На сервере (ssh ubuntu@<IP-СЕРВЕРА>) — одна команда
+sudo bash /tmp/lyceum/deploy/bootstrap.sh
+
+# 3. Открыть с телефона: http://<IP-СЕРВЕРА>:3000
+```
+
+Скрипт сам поставит Node.js, зависимости, systemd-службу, nginx и создаст
+`.env` со свежим `JWT_SECRET`.
+
+Чтобы добавить HTTPS и домен, перезапустите скрипт с доменом:
+
+```bash
+sudo bash /tmp/lyceum/deploy/bootstrap.sh lyceum.duckdns.org
+```
+
+Бесплатный поддомен — на <https://duckdns.org> (нужна регистрация, 5 минут).
+
 ## Готовые команды проекта
 
 ```bash

@@ -1,6 +1,6 @@
 /** Боковая панель: список чатов, контакты, поиск людей. */
 import { api, assetUrl } from '../api.js';
-import { el, clear, qs, fmtTime, preview } from '../dom.js';
+import { el, clear, qs, fmtTime, formatPhone, preview } from '../dom.js';
 import { state, on, isOnline, setSearch, setTab, upsertChat } from '../store.js';
 import { openChat } from './chat.js';
 import { avatarNode } from './avatar.js';
@@ -137,7 +137,7 @@ function renderContacts() {
           'span',
           { class: 'list-item__body' },
           el('span', { class: 'list-item__title' }, el('span', { text: contact.displayName })),
-          el('span', { class: 'list-item__preview', text: `@${contact.username}` })
+          el('span', { class: 'list-item__preview', text: contact.phoneDisplay || formatPhone(contact.phone) })
         ),
         el('span', { class: 'list-item__meta' }, el('span', { class: 'dot dot--off', hidden: true }))
       )
@@ -177,7 +177,7 @@ function renderSearch() {
           'span',
           { class: 'list-item__body' },
           el('span', { class: 'list-item__title' }, el('span', { text: user.displayName })),
-          el('span', { class: 'list-item__preview', text: `@${user.username}` })
+          el('span', { class: 'list-item__preview', text: user.phoneDisplay || formatPhone(user.phone) })
         ),
         el(
           'span',

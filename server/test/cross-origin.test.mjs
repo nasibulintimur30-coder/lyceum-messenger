@@ -89,7 +89,8 @@ console.log(`  бэкенд:   ${API_ORIGIN}\n`);
 
 const browser = await launchBrowser();
 const uniq = Date.now().toString(36).slice(-5);
-const username = `cross_${uniq}`;
+const phoneBase = 79000000000 + (Date.now() % 100000000);
+const phone = String(phoneBase);
 
 await browser.send('Page.navigate', { url: `${WEB_ORIGIN}/?api=${API_ORIGIN}` });
 await sleep(2500);
@@ -105,7 +106,7 @@ await browser.evaluate(`
     node.dispatchEvent(new Event('input', { bubbles: true }));
   };
   set('#auth-display', 'Кросс');
-  set('#auth-username', '${username}');
+  set('#auth-phone', '${phone}');
   set('#auth-password', 'secret123');
   document.querySelector('#auth-form').requestSubmit();
   true;
@@ -126,7 +127,7 @@ const peer = await (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      username: `crosspeer_${uniq}`,
+      phone: String(phoneBase + 1),
       password: 'secret123',
       displayName: 'Кросс-собеседник',
     }),

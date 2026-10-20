@@ -1,6 +1,6 @@
 /** Модальные окна: профиль, создание группы, сведения о чате. */
 import { api } from '../api.js';
-import { el, clear, qs, fmtLastSeen } from '../dom.js';
+import { el, clear, qs, fmtLastSeen, formatPhone } from '../dom.js';
 import { state, setContacts, setUser, upsertChat } from '../store.js';
 import { applyTheme, ACCENTS as ACCENT_NAMES } from '../theme.js';
 import { openChat } from './chat.js';
@@ -88,7 +88,7 @@ export function openProfile() {
       el(
         'div',
         {},
-        el('div', { class: 'muted', text: `@${user.username}` }),
+        el('div', { class: 'muted', text: user.phoneDisplay || formatPhone(user.phone) }),
         el('div', { class: 'muted', text: fmtLastSeen(user.lastSeen) })
       )
     ),
@@ -168,7 +168,7 @@ export async function openNewGroup() {
             'span',
             { class: 'list-item__body' },
             el('span', { class: 'list-item__title' }, el('span', { text: user.displayName })),
-            el('span', { class: 'list-item__preview', text: `@${user.username}` })
+            el('span', { class: 'list-item__preview', text: user.phoneDisplay || formatPhone(user.phone) })
           )
         )
       );
@@ -396,7 +396,7 @@ export async function openChatInfo(chatId) {
               el('span', { class: 'list-item__title' }, el('span', { text: member.displayName })),
               el('span', {
                 class: 'list-item__preview',
-                text: isOwner ? 'создатель' : `@${member.username}`,
+                text: isOwner ? 'создатель' : member.phoneDisplay || formatPhone(member.phone),
               })
             ),
             member.online ? el('span', { class: 'dot' }) : null,

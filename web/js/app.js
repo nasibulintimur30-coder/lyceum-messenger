@@ -5,7 +5,7 @@ import { api, assetUrl, getToken, setToken } from './api.js';
 import { connectSocket, disconnectSocket } from './socket.js';
 import { state, on, setChats, setContacts, setTab, setUser } from './store.js';
 import { applyTheme, localAccent, localTheme } from './theme.js';
-import { clear, qs } from './dom.js';
+import { clear, formatPhone, qs } from './dom.js';
 import { avatarNode } from './ui/avatar.js';
 import { initAuth } from './ui/auth.js';
 import { initSidebar } from './ui/sidebar.js';
@@ -30,7 +30,7 @@ function renderMe() {
   if (!user) return;
 
   qs('#me-name').textContent = user.displayName;
-  qs('#me-username').textContent = `@${user.username}`;
+  qs('#me-username').textContent = user.phoneDisplay || formatPhone(user.phone);
 
   const button = qs('#me-button');
   clear(button);

@@ -16,7 +16,7 @@ export function verifyPassword(password, hash) {
 }
 
 export function signToken(user) {
-  return jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
+  return jwt.sign({ id: user.id, phone: user.phone }, JWT_SECRET, {
     expiresIn: TOKEN_TTL,
   });
 }

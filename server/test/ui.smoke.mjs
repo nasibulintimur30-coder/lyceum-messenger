@@ -53,7 +53,7 @@ await shot('01-auth');
 
 /* Регистрация через форму */
 const uniq = Date.now().toString(36).slice(-5);
-const username = `ui_${uniq}`;
+const phone = String(79000000000 + (Date.now() % 100000000));
 
 await browser.evaluate(`
   document.querySelector('#auth-toggle').click();
@@ -63,13 +63,21 @@ await browser.evaluate(`
     node.dispatchEvent(new Event('input', { bubbles: true }));
   };
   set('#auth-display', 'Тестовый');
-  set('#auth-username', '${username}');
+  set('#auth-phone', '${phone}');
   set('#auth-password', 'secret123');
   document.querySelector('#auth-form').requestSubmit();
   true;
 `);
 
 await sleep(2000);
+
+/* Номер в поле должно было отформатироваться */
+const phoneField = await browser.evaluate("document.querySelector('#auth-phone').value");
+check(
+  'номер телефона отформатирован в поле',
+  phoneField.startsWith('+7 (') && phoneField.includes(')'),
+  phoneField
+);
 
 const appVisible = await browser.evaluate(
   "document.querySelector('#screen-app').hidden === false && document.querySelector('#screen-auth').hidden"
@@ -86,7 +94,7 @@ const second = await (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      username: `peer_${uniq}`,
+      phone: String(Number(phone) + 1),
       password: 'secret123',
       displayName: 'Собеседник',
     }),

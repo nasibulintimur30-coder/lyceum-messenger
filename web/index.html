@@ -39,16 +39,16 @@
           </label>
 
           <label class="field">
-            <span class="field__label">Логин</span>
+            <span class="field__label">Телефон</span>
             <input
-              id="auth-username"
+              id="auth-phone"
               class="field__input"
-              type="text"
-              name="username"
-              maxlength="24"
-              pattern="[a-zA-Z0-9_]{3,24}"
-              placeholder="a-z, 0-9 и _"
-              autocomplete="username"
+              type="tel"
+              name="phone"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="+7 (999) 123-45-67"
+              maxlength="18"
               required
             />
           </label>

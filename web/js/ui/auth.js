@@ -1,6 +1,6 @@
 /** Экран входа и регистрации. */
 import { api, setToken } from '../api.js';
-import { qs } from '../dom.js';
+import { applyPhoneFormat, normalizePhone, qs } from '../dom.js';
 
 let mode = 'login';
 
@@ -16,7 +16,7 @@ export function initAuth({ onSuccess }) {
   const displayField = qs('#field-display');
   const subtitle = qs('#auth-subtitle');
   const displayInput = qs('#auth-display');
-  const usernameInput = qs('#auth-username');
+  const phoneInput = qs('#auth-phone');
   const passwordInput = qs('#auth-password');
 
   function applyMode() {
@@ -31,22 +31,30 @@ export function initAuth({ onSuccess }) {
     errorBox.hidden = true;
   }
 
+  // Номер форматируется на лету: +7 (999) 123-45-67
+  phoneInput.addEventListener('input', () => applyPhoneFormat(phoneInput));
+
   toggle.addEventListener('click', () => {
     mode = mode === 'login' ? 'register' : 'login';
     applyMode();
-    (mode === 'register' ? displayInput : usernameInput).focus();
+    (mode === 'register' ? displayInput : phoneInput).focus();
   });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     errorBox.hidden = true;
-    submit.disabled = true;
 
+    const phone = normalizePhone(phoneInput.value);
+    if (!phone) {
+      errorBox.textContent = 'Введите номер полностью: например +7 999 123-45-67';
+      errorBox.hidden = false;
+      phoneInput.focus();
+      return;
+    }
+
+    submit.disabled = true;
     try {
-      const payload = {
-        username: usernameInput.value.trim().toLowerCase(),
-        password: passwordInput.value,
-      };
+      const payload = { phone, password: passwordInput.value };
       if (mode === 'register') payload.displayName = displayInput.value.trim();
 
       const data = mode === 'register' ? await api.register(payload) : await api.login(payload);

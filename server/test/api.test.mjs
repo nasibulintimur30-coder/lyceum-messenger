@@ -62,8 +62,9 @@ async function call(method, urlPath, { body, token, raw } = {}) {
 }
 
 const uniq = Date.now().toString(36).slice(-5);
-const alice = { username: `alice_${uniq}`, password: 'secret123', displayName: 'Алиса' };
-const bob = { username: `bob_${uniq}`, password: 'secret123', displayName: 'Борис' };
+const phoneBase = 79000000000 + (Date.now() % 100000000);
+const alice = { phone: String(phoneBase), password: 'secret123', displayName: 'Алиса' };
+const bob = { phone: String(phoneBase + 1), password: 'secret123', displayName: 'Борис' };
 
 /* 1. Конфигурация */
 const config = await call('GET', '/api/config');
@@ -77,10 +78,10 @@ const regB = await call('POST', '/api/auth/register', { body: bob });
 check('POST /api/auth/register (второй)', regB.status === 200 && !!regB.data.token);
 
 const dup = await call('POST', '/api/auth/register', { body: alice });
-check('занятый логин отклонён (409)', dup.status === 409);
+check('занятый номер отклонён (409)', dup.status === 409);
 
 const weak = await call('POST', '/api/auth/register', {
-  body: { username: 'x', password: '1', displayName: 'X' },
+  body: { phone: '123', password: '1', displayName: 'X' },
 });
 check('валидация регистрации (400)', weak.status === 400);
 
@@ -90,24 +91,43 @@ const idA = regA.data.user?.id;
 const idB = regB.data.user?.id;
 
 const login = await call('POST', '/api/auth/login', {
-  body: { username: alice.username, password: alice.password },
+  body: { phone: alice.phone, password: alice.password },
 });
 check('POST /api/auth/login', login.status === 200 && !!login.data.token);
 
+/* Вход с номера в разных форматах */
+const formatted = await call('POST', '/api/auth/login', {
+  body: { phone: `+7 (${alice.phone.slice(1, 4)}) ${alice.phone.slice(4, 7)}-${alice.phone.slice(7, 9)}-${alice.phone.slice(9)}`, password: alice.password },
+});
+check('вход с форматированным номером', formatted.status === 200 && !!formatted.data.token);
+
+const eightPrefix = await call('POST', '/api/auth/login', {
+  body: { phone: `8${alice.phone.slice(1)}`, password: alice.password },
+});
+check('вход с номера, начинающегося на 8', eightPrefix.status === 200 && !!eightPrefix.data.token);
+
 const badLogin = await call('POST', '/api/auth/login', {
-  body: { username: alice.username, password: 'wrong' },
+  body: { phone: alice.phone, password: 'wrong' },
 });
 check('неверный пароль отклонён (401)', badLogin.status === 401);
 
 const me = await call('GET', '/api/auth/me', { token: tokenA });
-check('GET /api/auth/me', me.status === 200 && me.data.user?.username === alice.username);
+check('GET /api/auth/me', me.status === 200 && me.data.user?.phone === alice.phone);
+check(
+  'в профиле есть отформатированный номер',
+  me.data.user?.phoneDisplay === `+7 (${alice.phone.slice(1, 4)}) ${alice.phone.slice(4, 7)}-${alice.phone.slice(7, 9)}-${alice.phone.slice(9)}`,
+  me.data.user?.phoneDisplay
+);
 
 const noAuth = await call('GET', '/api/auth/me');
 check('без токена — 401', noAuth.status === 401);
 
 /* 3. Поиск и контакты */
-const search = await call('GET', `/api/users/search?q=${bob.username}`, { token: tokenA });
-check('GET /api/users/search', search.status === 200 && search.data.users?.length === 1);
+const search = await call('GET', `/api/users/search?q=${bob.phone}`, { token: tokenA });
+check('GET /api/users/search (по номеру)', search.status === 200 && search.data.users?.length === 1);
+
+const searchByName = await call('GET', '/api/users/search?q=Борис', { token: tokenA });
+check('GET /api/users/search (по имени)', searchByName.status === 200 && searchByName.data.users?.length === 1);
 
 const addContact = await call('POST', '/api/contacts', { token: tokenA, body: { userId: idB } });
 check('POST /api/contacts', addContact.status === 200 && addContact.data.contact?.id === idB);
@@ -130,7 +150,7 @@ const chatTitle = await call('GET', `/api/chats/${chatId}`, { token: tokenB });
 check('GET /api/chats/:id', chatTitle.status === 200 && chatTitle.data.chat?.title === 'Алиса');
 
 const regC = await call('POST', '/api/auth/register', {
-  body: { username: `guest_${uniq}`, password: 'secret123', displayName: 'Гость' },
+  body: { phone: String(phoneBase + 2), password: 'secret123', displayName: 'Гость' },
 });
 const stranger = await call('GET', `/api/chats/${chatId}`, { token: regC.data.token });
 check('чужой чат недоступен (404)', stranger.status === 404);

@@ -50,11 +50,12 @@ async function api(method, urlPath, { body, token } = {}) {
 }
 
 const uniq = Date.now().toString(36).slice(-5);
+const phoneBase = 79000000000 + (Date.now() % 100000000);
 const alice = await api('POST', '/api/auth/register', {
-  body: { username: `rt_a_${uniq}`, password: 'secret123', displayName: 'Алиса' },
+  body: { phone: String(phoneBase), password: 'secret123', displayName: 'Алиса' },
 });
 const bob = await api('POST', '/api/auth/register', {
-  body: { username: `rt_b_${uniq}`, password: 'secret123', displayName: 'Борис' },
+  body: { phone: String(phoneBase + 1), password: 'secret123', displayName: 'Борис' },
 });
 
 const connect = (token) =>

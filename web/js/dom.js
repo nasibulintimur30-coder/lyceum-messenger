@@ -93,6 +93,71 @@ export function initials(name) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+/** Цифры из произвольной строки. */
+export function phoneDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+/**
+ * Форматирует номер телефона для отображения: +7 (999) 123-45-67.
+ */
+export function formatPhone(value) {
+  const digits = phoneDigits(value);
+  if (digits.length !== 11) return String(value || '');
+  return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(
+    9,
+    11
+  )}`;
+}
+
+/** Приводит введённый номер к каноническим 11 цифрам. null — если номер неполный. */
+export function normalizePhone(value) {
+  let digits = phoneDigits(value);
+  if (digits.length === 10) return `7${digits}`;
+  if (digits.length === 11 && digits.startsWith('8')) return `7${digits.slice(1)}`;
+  if (digits.length === 11 && digits.startsWith('7')) return digits;
+  return null;
+}
+
+/** Форматирует номер по мере ввода: +7 (999) 123-45-67. */
+export function formatPhoneInput(value) {
+  let digits = phoneDigits(value);
+  if (!digits) return String(value || '').startsWith('+') ? '+' : '';
+
+  if (digits.startsWith('8') && digits.length > 1) digits = `7${digits.slice(1)}`;
+  if (!digits.startsWith('7') && digits.length === 10) digits = `7${digits}`;
+
+  if (!digits.startsWith('7')) return `+${digits}`;
+
+  const rest = digits.slice(1);
+  let out = '+7 ';
+
+  if (rest.length) out += `(${rest.slice(0, 3)}`;
+  if (rest.length >= 3) out += ') ';
+  if (rest.length > 3) out += rest.slice(3, 6);
+  if (rest.length > 6) out += `-${rest.slice(6, 8)}`;
+  if (rest.length > 8) out += `-${rest.slice(8, 10)}`;
+
+  return out;
+}
+
+/** Форматирует поле ввода телефона, не теряя позицию курсора. */
+export function applyPhoneFormat(input) {
+  const before = input.value.slice(0, input.selectionStart ?? input.value.length);
+  const digitsBefore = phoneDigits(before).length;
+
+  input.value = formatPhoneInput(input.value);
+
+  let seen = 0;
+  for (let i = 0; i <= input.value.length; i += 1) {
+    if (seen >= digitsBefore) {
+      input.setSelectionRange(i, i);
+      break;
+    }
+    if (/\d/.test(input.value[i] || '')) seen += 1;
+  }
+}
+
 /** Короткий предпросмотр сообщения для списка чатов. */
 export function preview(message, ownId) {
   if (!message) return 'Нет сообщений';

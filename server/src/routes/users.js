@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { ACCENTS, AVATAR_PATTERN, MAX_BIO_LENGTH, THEMES } from '../config.js';
 import { authRequired } from '../auth.js';
 import { db, isContact, publicUser, updateUser } from '../db.js';
+import { normalizePhone } from '../phone.js';
 import { isOnline } from '../realtime.js';
 import { str, route } from '../http.js';
 
@@ -55,16 +56,22 @@ router.patch(
 router.get(
   '/search',
   route((req, res) => {
-    const q = str(req.query?.q).toLowerCase();
-    if (!q) return res.json({ users: [] });
+    const raw = str(req.query?.q);
+    if (!raw) return res.json({ users: [] });
+
+    // Поиск идёт по номеру телефона, имени или нику
+    const phone = normalizePhone(raw);
+    const like = `%${raw.toLowerCase()}%`;
+    const phoneLike = `%${raw.replace(/\D/g, '')}%`;
 
     const rows = db
       .prepare(
         `SELECT * FROM users
-          WHERE id <> ? AND (LOWER(username) LIKE ? OR LOWER(display_name) LIKE ?)
+          WHERE id <> ?
+            AND (LOWER(display_name) LIKE ? OR LOWER(bio) LIKE ? OR phone LIKE ?)
           ORDER BY display_name COLLATE NOCASE LIMIT 30`
       )
-      .all(req.user.id, `%${q}%`, `%${q}%`);
+      .all(req.user.id, like, like, phone ? phone : phoneLike);
 
     res.json({
       users: rows.map((u) => ({

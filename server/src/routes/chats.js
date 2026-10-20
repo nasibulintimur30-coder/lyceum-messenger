@@ -16,6 +16,7 @@ import {
   readMembers,
 } from '../db.js';
 import { getIo, isOnline } from '../realtime.js';
+import { formatPhone } from '../phone.js';
 import { num, str, route } from '../http.js';
 
 const router = Router();
@@ -239,7 +240,8 @@ router.get(
     res.json({
       members: readMembers(chatId).map((m) => ({
         id: m.id,
-        username: m.username,
+        phone: m.phone,
+        phoneDisplay: formatPhone(m.phone),
         displayName: m.display_name,
         avatar: m.avatar_path || null,
         bio: m.bio || '',

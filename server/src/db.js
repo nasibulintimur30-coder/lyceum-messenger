@@ -8,6 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 
 import { DB_FILE, UPLOAD_DIR } from './config.js';
+import { formatPhone } from './phone.js';
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -19,7 +20,7 @@ db.exec('PRAGMA foreign_keys = ON');
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  username      TEXT    NOT NULL UNIQUE,
+  phone         TEXT    NOT NULL UNIQUE,
   password_hash TEXT    NOT NULL,
   display_name  TEXT    NOT NULL,
   avatar_path   TEXT,
@@ -74,10 +75,23 @@ CREATE INDEX IF NOT EXISTS idx_contacts_user  ON contacts(user_id);
 export function migrate() {
   db.exec(SCHEMA);
 
-  // Колонка темы появилась позже схемы — добавляем, если её нет
   const columns = db.prepare('PRAGMA table_info(users)').all();
-  if (!columns.some((column) => column.name === 'theme')) {
+  const has = (name) => columns.some((column) => column.name === name);
+
+  // Колонка темы появилась позже схемы — добавляем, если её нет
+  if (!has('theme')) {
     db.exec("ALTER TABLE users ADD COLUMN theme TEXT NOT NULL DEFAULT 'dark'");
+  }
+
+  // Логин заменён номером телефона
+  if (has('username') && !has('phone')) {
+    db.exec('ALTER TABLE users RENAME COLUMN username TO phone');
+    // Старые значения логинов номерами не являются — такие записи удаляем
+    for (const row of db.prepare('SELECT id, phone FROM users').all()) {
+      if (!/^\d{11}$/.test(String(row.phone))) {
+        db.prepare('DELETE FROM users WHERE id = ?').run(row.id);
+      }
+    }
   }
 }
 
@@ -96,20 +110,20 @@ export function getUserById(id) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(Number(id));
 }
 
-export function getUserByUsername(username) {
+export function getUserByPhone(phone) {
   return db
-    .prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE')
-    .get(String(username || '').trim());
+    .prepare('SELECT * FROM users WHERE phone = ?')
+    .get(String(phone || '').trim());
 }
 
-export function createUser({ username, passwordHash, displayName }) {
+export function createUser({ phone, passwordHash, displayName }) {
   const t = Date.now();
   const info = db
     .prepare(
-      `INSERT INTO users (username, password_hash, display_name, created_at, last_seen)
+      `INSERT INTO users (phone, password_hash, display_name, created_at, last_seen)
        VALUES (?, ?, ?, ?, ?)`
     )
-    .run(username, passwordHash, displayName, t, t);
+    .run(phone, passwordHash, displayName, t, t);
   return getUserById(Number(info.lastInsertRowid));
 }
 
@@ -138,7 +152,8 @@ export function publicUser(user) {
   if (!user) return null;
   return {
     id: user.id,
-    username: user.username,
+    phone: user.phone,
+    phoneDisplay: formatPhone(user.phone),
     displayName: user.display_name,
     avatar: user.avatar_path || null,
     bio: user.bio || '',
@@ -199,7 +214,7 @@ export function memberIds(chatId) {
 export function readMembers(chatId) {
   return db
     .prepare(
-      `SELECT u.id, u.username, u.display_name, u.avatar_path, u.bio, u.last_seen,
+      `SELECT u.id, u.phone, u.display_name, u.avatar_path, u.bio, u.last_seen,
               m.role, m.last_read_message_id
          FROM chat_members m JOIN users u ON u.id = m.user_id
         WHERE m.chat_id = ?`
@@ -280,7 +295,8 @@ export function getChatDetail(chatId, userId) {
 
   const people = members.map((m) => ({
     id: m.id,
-    username: m.username,
+    phone: m.phone,
+    phoneDisplay: formatPhone(m.phone),
     displayName: m.display_name,
     avatar: m.avatar_path || null,
     bio: m.bio || '',

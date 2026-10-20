@@ -4,14 +4,14 @@
  * Файл не собирается — его можно править прямо на хостинге (Netlify),
  * не пересобирая фронтенд.
  *
- * apiBase    — адрес бэкенда, например https://neon-api.onrender.com
+ * apiBase    — адрес бэкенда, например https://lyceum-api.onrender.com
  *              пустая строка = бэкенд на том же домене, что и страница
  * socketBase — адрес WebSocket-сервера; пусто = apiBase
  *
  * Переопределить можно и без правки файла: откройте страницу с параметром
  * ?api=https://ваш-бэкенд — адрес сохранится в localStorage браузера.
  */
-window.NEON_CONFIG = {
+window.LYCEUM_CONFIG = {
   apiBase: '',
   socketBase: '',
 };

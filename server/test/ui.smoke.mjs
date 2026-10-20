@@ -46,7 +46,7 @@ const authVisible = await browser.evaluate(
 check('показан экран входа', authVisible === true);
 
 const configLoaded = await browser.evaluate(
-  "typeof window.NEON_CONFIG === 'object' && window.NEON_CONFIG !== null"
+  "typeof window.LYCEUM_CONFIG === 'object' && window.LYCEUM_CONFIG !== null"
 );
 check('config.js загружен', configLoaded === true);
 await shot('01-auth');
@@ -101,7 +101,7 @@ const second = await (
   })
 ).json();
 
-const token = await browser.evaluate("localStorage.getItem('neon.token')");
+const token = await browser.evaluate("localStorage.getItem('lyceum.token')");
 const chat = await (
   await fetch(`${BASE}/api/chats`, {
     method: 'POST',

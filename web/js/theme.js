@@ -6,8 +6,8 @@
  * теме, что и приложение, без мигания).
  */
 
-const THEME_KEY = 'neon.theme';
-const ACCENT_KEY = 'neon.accent';
+const THEME_KEY = 'lyceum.theme';
+const ACCENT_KEY = 'lyceum.accent';
 
 export const THEMES = ['dark', 'light'];
 export const ACCENTS = ['neon', 'ocean', 'sunset', 'mint', 'mono'];

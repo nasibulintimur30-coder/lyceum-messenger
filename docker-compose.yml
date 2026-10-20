@@ -1,10 +1,10 @@
 # Запуск на сервере: docker compose up -d
-# Данные (SQLite + загруженные картинки) лежат в volume neon_data.
+# Данные (SQLite + загруженные картинки) лежат в volume lyceum_data.
 
 services:
-  neon:
+  lyceum:
     build: .
-    container_name: neon-messenger
+    container_name: lyceum-messenger
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -16,7 +16,7 @@ services:
       # Список доменов фронтенда через запятую, либо * для любых
       CORS_ORIGIN: "${CORS_ORIGIN:-*}"
     volumes:
-      - neon_data:/app/server/data
+      - lyceum_data:/app/server/data
 
 volumes:
-  neon_data:
+  lyceum_data:

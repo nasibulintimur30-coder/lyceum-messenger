@@ -1,8 +1,8 @@
 {
-  "name": "neon-messenger",
+  "name": "lyceum-messenger",
   "version": "1.0.0",
   "private": true,
-  "description": "Neon Messenger — PWA-мессенджер с обменом сообщениями в реальном времени",
+  "description": "Lyceum Messenger — PWA-мессенджер с обменом сообщениями в реальном времени",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server/src/index.js",

@@ -68,7 +68,7 @@ const bob = { phone: String(phoneBase + 1), password: 'secret123', displayName: 
 
 /* 1. Конфигурация */
 const config = await call('GET', '/api/config');
-check('GET /api/config', config.status === 200 && config.data.name === 'Neon Messenger');
+check('GET /api/config', config.status === 200 && config.data.name === 'Lyceum Messenger');
 
 /* 2. Регистрация и вход */
 const regA = await call('POST', '/api/auth/register', { body: alice });
@@ -270,14 +270,14 @@ check('недопустимый тип файла отклонён (400)', uploa
 /* 9. Статика и SPA */
 for (const [urlPath, needle] of [
   ['/', '<!doctype html>'],
-  ['/index.html', 'Neon Messenger'],
+  ['/index.html', 'Lyceum Messenger'],
   ['/css/theme.css', '--a1'],
   ['/css/app.css', '.sidebar'],
   ['/js/app.js', 'enterApp'],
   ['/js/store.js', 'export const state'],
   ['/js/ui/chat.js', 'openChat'],
   ['/socket.io/socket.io.js', 'io'],
-  ['/manifest.webmanifest', 'Neon Messenger'],
+  ['/manifest.webmanifest', 'Lyceum Messenger'],
   ['/sw.js', 'addEventListener'],
 ]) {
   const res = await fetch(BASE + urlPath);

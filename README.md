@@ -1,4 +1,4 @@
-# Neon Messenger
+# Lyceum Messenger
 
 Мессенджер с обменом сообщениями в реальном времени: Node.js + Express + Socket.IO + SQLite
 на сервере и PWA на ванильном JavaScript — без сборки, фреймворков и нативных зависимостей.
@@ -95,7 +95,7 @@ Project2/
 ├── tools/
 │   └── make-icons.mjs    генератор PNG-иконок без графических зависимостей
 ├── deploy/
-│   └── neon.service      systemd-юнит для VPS
+│   └── lyceum.service      systemd-юнит для VPS
 ├── Dockerfile            образ для Render / Fly / VPS
 ├── docker-compose.yml    запуск с volume для данных
 ├── netlify.toml          конфигурация деплоя фронтенда

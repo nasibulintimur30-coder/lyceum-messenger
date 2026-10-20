@@ -118,7 +118,7 @@ const appVisible = await browser.evaluate(
 );
 check('приложение открылось с чужого домена', appVisible === true);
 
-const savedBase = await browser.evaluate("localStorage.getItem('neon.apiBase')");
+const savedBase = await browser.evaluate("localStorage.getItem('lyceum.apiBase')");
 check('адрес бэкенда сохранён', savedBase === API_ORIGIN, savedBase || 'нет');
 
 /* Собеседник и чат */
@@ -134,7 +134,7 @@ const peer = await (
   })
 ).json();
 
-const token = await browser.evaluate("localStorage.getItem('neon.token')");
+const token = await browser.evaluate("localStorage.getItem('lyceum.token')");
 const chat = await (
   await fetch(`${API_ORIGIN}/api/chats`, {
     method: 'POST',

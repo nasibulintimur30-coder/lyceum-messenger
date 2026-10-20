@@ -1,6 +1,6 @@
 {
-  "name": "Neon Messenger",
-  "short_name": "Neon",
+  "name": "Lyceum Messenger",
+  "short_name": "Lyceum",
   "description": "Мессенджер с обменом сообщениями в реальном времени",
   "lang": "ru",
   "start_url": "/",

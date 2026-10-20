@@ -30,10 +30,10 @@ export const HOST = process.env.HOST || '0.0.0.0';
 export const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 /** Секрет для подписи JWT. В продакшене задаётся переменной окружения. */
-export const JWT_SECRET = process.env.JWT_SECRET || 'neon-messenger-dev-secret-change-me';
+export const JWT_SECRET = process.env.JWT_SECRET || 'lyceum-messenger-dev-secret-change-me';
 export const TOKEN_TTL = '30d';
 
-export const APP_NAME = 'Neon Messenger';
+export const APP_NAME = 'Lyceum Messenger';
 export const APP_VERSION = '1.0.0';
 
 export const MAX_UPLOAD_SIZE = 8 * 1024 * 1024;

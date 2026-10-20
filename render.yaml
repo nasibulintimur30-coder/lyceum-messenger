@@ -2,7 +2,7 @@
 #
 # Подключение: New → Blueprint → указать репозиторий с этим файлом.
 # Render соберёт Docker-образ и выдаст публичный адрес вида
-# https://neon-messenger.onrender.com — его нужно вписать в apiBase
+# https://lyceum-messenger.onrender.com — его нужно вписать в apiBase
 # в файле web/config.js.
 #
 # ВАЖНО: на бесплатном тарифе диск эфемерный, база SQLite будет стираться
@@ -11,7 +11,7 @@
 
 services:
   - type: web
-    name: neon-messenger
+    name: lyceum-messenger
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: starter
@@ -29,6 +29,6 @@ services:
       - key: CORS_ORIGIN
         value: https://example.netlify.app
     disk:
-      name: neon-data
+      name: lyceum-data
       mountPath: /app/server/data
       sizeGB: 1

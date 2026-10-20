@@ -4,7 +4,7 @@
  * Статика кэшируется (cache-first с фоновым обновлением), API и WebSocket
  * всегда идут в сеть — сообщения должны быть актуальными.
  */
-const CACHE = 'neon-messenger-v1';
+const CACHE = 'lyceum-messenger-v1';
 
 const SHELL = [
   '/',

@@ -4,14 +4,14 @@
  * Токен хранится в localStorage и автоматически подставляется в заголовок
  * Authorization. Ответы с ошибкой превращаются в Error с текстом от сервера.
  *
- * Адрес бэкенда берётся из web/config.js (window.NEON_CONFIG.apiBase).
+ * Адрес бэкенда берётся из web/config.js (window.LYCEUM_CONFIG.apiBase).
  * Если фронтенд и бэкенд на одном домене — оставляем пустым.
  */
 
-const TOKEN_KEY = 'neon.token';
-const BASE_KEY = 'neon.apiBase';
+const TOKEN_KEY = 'lyceum.token';
+const BASE_KEY = 'lyceum.apiBase';
 
-const CONFIG = window.NEON_CONFIG || {};
+const CONFIG = window.LYCEUM_CONFIG || {};
 
 /** Читает и запоминает адрес бэкенда: config.js, query-параметр или localStorage. */
 function resolveBase() {

@@ -48,7 +48,7 @@ npm run deploy
 
 ```powershell
 cd D:\Projects\Project2
-git remote add origin https://github.com/<ваш-логин>/neon-messenger.git
+git remote add origin https://github.com/<ваш-логин>/lyceum-messenger.git
 git push -u origin main
 ```
 
@@ -58,7 +58,7 @@ git push -u origin main
 **2. Подключить репозиторий к Netlify**
 
 1. <https://app.netlify.com> → **Add new site** → **Import an existing project**
-2. Выбрать репозиторий `neon-messenger`
+2. Выбрать репозиторий `lyceum-messenger`
 3. Build settings:
    - Build command: оставить пустым
    - Publish directory: `web`
@@ -77,11 +77,11 @@ git push
 
 Netlify передеплоит сайт автоматически.
 
-**4. Домен Netlify** → Site settings → Change site name → например `neon-messenger`.
+**4. Домен Netlify** → Site settings → Change site name → например `lyceum-messenger`.
 Потом впишите его в `CORS_ORIGIN` на бэкенде:
 
 ```ini
-CORS_ORIGIN=https://neon-messenger.netlify.app
+CORS_ORIGIN=https://lyceum-messenger.netlify.app
 ```
 
 ## Почему нельзя задеплоить всё на Netlify
@@ -119,8 +119,8 @@ Netlify — хостинг статики и serverless-функций. Наше
 Адрес бэкенда задаётся в одном файле — `web/config.js`:
 
 ```js
-window.NEON_CONFIG = {
-  apiBase: 'https://neon-api.example.com',   // адрес бэкенда
+window.LYCEUM_CONFIG = {
+  apiBase: 'https://lyceum-api.example.com',   // адрес бэкенда
   socketBase: '',                            // пусто = apiBase
 };
 ```
@@ -176,7 +176,7 @@ notepad D:\Projects\Project2\web\config.js
 ```
 
 ```js
-window.NEON_CONFIG = {
+window.LYCEUM_CONFIG = {
   apiBase: 'https://random-words-1234.trycloudflare.com',
   socketBase: '',
 };
@@ -203,7 +203,7 @@ npm run build
 npm install -g netlify-cli
 netlify login
 cd D:\Projects\Project2
-netlify init --dir web --site-name neon-messenger
+netlify init --dir web --site-name lyceum-messenger
 netlify deploy --dir web --prod
 netlify open
 ```
@@ -234,8 +234,8 @@ npm start
 
 ```powershell
 cloudflared tunnel login
-cloudflared tunnel create neon
-cloudflared tunnel route dns neon messenger.mydomain.ru
+cloudflared tunnel create lyceum
+cloudflared tunnel route dns Lyceum Messenger.mydomain.ru
 ```
 
 Затем создайте `C:\Users\<user>\.cloudflared\config.yml`:
@@ -252,7 +252,7 @@ ingress:
 И запускайте:
 
 ```powershell
-cloudflared tunnel run neon
+cloudflared tunnel run lyceum
 ```
 
 ## Вариант B — бесплатно и 24/7: Oracle Cloud Always Free
@@ -272,25 +272,25 @@ cloudflared tunnel run neon
 ```bash
 ssh -i ~/oracle.key ubuntu@<IP-ВМ>
 sudo apt update && sudo apt install -y nodejs npm
-sudo useradd -m -s /bin/bash neon
-sudo mkdir -p /opt/neon && sudo chown -R neon:neon /opt/neon
+sudo useradd -m -s /bin/bash lyceum
+sudo mkdir -p /opt/lyceum && sudo chown -R lyceum:lyceum /opt/lyceum
 ```
 
 **3. Загрузить проект**
 
 ```bash
 # с Windows:
-scp -r D:\Projects\Project2 ubuntu@<IP-ВМ>:/tmp/neon
+scp -r D:\Projects\Project2 ubuntu@<IP-ВМ>:/tmp/lyceum
 # на ВМ:
-sudo mv /tmp/neon /opt/neon-project
-sudo cp -r /opt/neon-project/* /opt/neon/
-sudo chown -R neon:neon /opt/neon
+sudo mv /tmp/lyceum /opt/lyceum-project
+sudo cp -r /opt/lyceum-project/* /opt/lyceum/
+sudo chown -R lyceum:lyceum /opt/lyceum
 ```
 
 **4. Переменные окружения**
 
 ```bash
-sudo -u neon nano /opt/neon/.env
+sudo -u lyceum nano /opt/lyceum/.env
 ```
 
 ```ini
@@ -303,17 +303,17 @@ CORS_ORIGIN=https://ваш-сайт.netlify.app
 **5. Запуск как службы**
 
 ```bash
-sudo cp /opt/neon/deploy/neon.service /etc/systemd/system/
+sudo cp /opt/lyceum/deploy/lyceum.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now neon
-sudo systemctl status neon
+sudo systemctl enable --now lyceum
+sudo systemctl status lyceum
 ```
 
 **6. HTTPS перед доменом**
 
 ```bash
 sudo apt install -y nginx certbot python3-certbot-nginx
-sudo nano /etc/nginx/sites-available/neon
+sudo nano /etc/nginx/sites-available/lyceum
 ```
 
 ```nginx
@@ -334,7 +334,7 @@ server {
 ```
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/neon /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/lyceum /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d messenger.mydomain.ru
 ```
@@ -360,8 +360,8 @@ sudo certbot --nginx -d messenger.mydomain.ru
 ## Вариант D — Fly.io (постоянный диск, платно)
 
 ```bash
-fly launch --no-deploy --name neon-messenger --region fra
-fly volumes create neon_data --size 1
+fly launch --no-deploy --name lyceum-messenger --region fra
+fly volumes create lyceum_data --size 1
 fly secrets set JWT_SECRET=<openssl rand -hex 32> CORS_ORIGIN=https://ваш-сайт.netlify.app
 fly deploy
 ```
@@ -370,7 +370,7 @@ fly deploy
 
 ```toml
 [[mounts]]
-  source = "neon_data"
+  source = "lyceum_data"
   destination = "/app/server/data"
 ```
 
@@ -416,15 +416,15 @@ netlify deploy --dir web --prod
 На ВМ с systemd:
 
 ```bash
-scp -r D:\Projects\Project2\server ubuntu@<IP-ВМ>:/tmp/neon-server
-ssh ubuntu@<IP-ВМ> "sudo rsync -a --exclude node_modules --exclude data /tmp/neon-server/ /opt/neon/server/ && sudo systemctl restart neon"
+scp -r D:\Projects\Project2\server ubuntu@<IP-ВМ>:/tmp/lyceum-server
+ssh ubuntu@<IP-ВМ> "sudo rsync -a --exclude node_modules --exclude data /tmp/lyceum-server/ /opt/lyceum/server/ && sudo systemctl restart lyceum"
 ```
 
 Через Docker:
 
 ```bash
-scp -r D:\Projects\Project2 ubuntu@<IP-ВМ>:/tmp/neon
-ssh ubuntu@<IP-ВМ> "cd /tmp/neon && docker compose up -d --build"
+scp -r D:\Projects\Project2 ubuntu@<IP-ВМ>:/tmp/lyceum
+ssh ubuntu@<IP-ВМ> "cd /tmp/lyceum && docker compose up -d --build"
 ```
 
-Данные в volume `neon_data` при этом сохраняются.
+Данные в volume `lyceum_data` при этом сохраняются.

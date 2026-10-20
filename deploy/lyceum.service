@@ -1,15 +1,15 @@
 [Unit]
-Description=Neon Messenger (Node.js + Socket.IO)
+Description=Lyceum Messenger (Node.js + Socket.IO)
 After=network.target
 
 [Service]
 Type=simple
-User=neon
-WorkingDirectory=/opt/neon
+User=lyceum
+WorkingDirectory=/opt/lyceum
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=HOST=0.0.0.0
-EnvironmentFile=/opt/neon/.env
+EnvironmentFile=/opt/lyceum/.env
 ExecStart=/usr/bin/node server/src/index.js
 Restart=always
 RestartSec=5

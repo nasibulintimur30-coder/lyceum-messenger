@@ -38,10 +38,12 @@ export function authRequired(req, res, next) {
   const payload = verifyToken(token);
   if (!payload) return res.status(401).json({ error: 'Сессия истекла, войдите заново' });
 
-  const user = getUserById(payload.id);
-  if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
-
-  req.user = user;
-  req.userPublic = publicUser(user);
-  next();
+  getUserById(payload.id)
+    .then((user) => {
+      if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
+      req.user = user;
+      req.userPublic = publicUser(user);
+      next();
+    })
+    .catch(next);
 }

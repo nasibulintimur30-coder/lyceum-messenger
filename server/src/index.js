@@ -3,11 +3,11 @@ import http from 'node:http';
 import os from 'node:os';
 
 import { APP_NAME, HOST, PORT } from './config.js';
-import { migrate } from './db.js';
+import { closeDatabase, driverName, migrate } from './db.js';
 import { createApp } from './app.js';
 import { attachRealtime } from './realtime.js';
 
-migrate();
+await migrate();
 
 const app = createApp();
 const server = http.createServer(app);
@@ -23,6 +23,7 @@ server.listen(PORT, HOST, () => {
 
   console.log('');
   console.log(`  ✦ ${APP_NAME} запущен`);
+  console.log(`  ➜  база: ${driverName() === 'libsql' ? 'Turso (облако)' : 'SQLite (файл)'}`);
   console.log(`  ➜  компьютер:  http://localhost:${PORT}`);
   for (const ip of lan) console.log(`  ➜  телефон:    http://${ip}:${PORT}`);
   console.log('');
@@ -30,9 +31,12 @@ server.listen(PORT, HOST, () => {
 
 /** Мягкое завершение: закрываем сервер и завершаем процесс. */
 for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
+  process.on(signal, async () => {
     console.log(`\n  ${signal} — останавливаю сервер…`);
-    server.close(() => process.exit(0));
+    server.close(async () => {
+      await closeDatabase();
+      process.exit(0);
+    });
     setTimeout(() => process.exit(0), 2000).unref();
   });
 }

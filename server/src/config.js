@@ -20,6 +20,13 @@ export const DATA_DIR = path.join(SERVER_DIR, 'data');
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(DATA_DIR, 'uploads');
 export const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
 
+/**
+ * Облачная база (Turso/libSQL). Если URL задан — данные хранятся там,
+ * иначе используется локальный файл SQLite.
+ */
+export const TURSO_URL = process.env.TURSO_URL || '';
+export const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
+
 export const PORT = Number(process.env.PORT) || 3000;
 export const HOST = process.env.HOST || '0.0.0.0';
 
@@ -41,11 +48,11 @@ export const MAX_MESSAGE_LENGTH = 4000;
 export const MAX_BIO_LENGTH = 200;
 
 /**
- * Аватары: загруженный файл (/uploads/…) или встроенный градиент
+ * Аватары: загруженный файл (/api/upload/…) или встроенный градиент
  * (gradient:neon), который рисуется на клиенте. Старый формат emoji:… тоже
  * принимается — ранее созданные чаты продолжат работать.
  */
-export const AVATAR_PATTERN = /^(\/uploads\/[A-Za-z0-9._-]+|gradient:[a-z]{1,16}|emoji:.{1,8})$/;
+export const AVATAR_PATTERN = /^(\/api\/upload\/[A-Za-z0-9_-]+|\/uploads\/[A-Za-z0-9._-]+|gradient:[a-z]{1,16}|emoji:.{1,8})$/;
 
 /** Темы оформления, доступные пользователю. */
 export const ACCENTS = ['neon', 'ocean', 'sunset', 'mint', 'mono'];

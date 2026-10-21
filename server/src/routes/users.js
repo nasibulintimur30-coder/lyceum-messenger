@@ -3,7 +3,7 @@ import { Router } from 'express';
 
 import { ACCENTS, AVATAR_PATTERN, MAX_BIO_LENGTH, THEMES } from '../config.js';
 import { authRequired } from '../auth.js';
-import { db, isContact, publicUser, updateUser } from '../db.js';
+import { isContact, getUserById, publicUser, searchUsers, updateUser } from '../db.js';
 import { normalizePhone } from '../phone.js';
 import { isOnline } from '../realtime.js';
 import { str, route } from '../http.js';
@@ -13,7 +13,7 @@ router.use(authRequired);
 
 router.patch(
   '/me',
-  route((req, res) => {
+  route(async (req, res) => {
     const patch = {};
     const { displayName, bio, avatar, accent, theme } = req.body || {};
 
@@ -48,14 +48,14 @@ router.patch(
       patch.theme = value;
     }
 
-    const user = updateUser(req.user.id, patch);
+    const user = await updateUser(req.user.id, patch);
     res.json({ user: publicUser(user) });
   })
 );
 
 router.get(
   '/search',
-  route((req, res) => {
+  route(async (req, res) => {
     const raw = str(req.query?.q);
     if (!raw) return res.json({ users: [] });
 
@@ -64,35 +64,34 @@ router.get(
     const like = `%${raw.toLowerCase()}%`;
     const phoneLike = `%${raw.replace(/\D/g, '')}%`;
 
-    const rows = db
-      .prepare(
-        `SELECT * FROM users
-          WHERE id <> ?
-            AND (LOWER(display_name) LIKE ? OR LOWER(bio) LIKE ? OR phone LIKE ?)
-          ORDER BY display_name COLLATE NOCASE LIMIT 30`
-      )
-      .all(req.user.id, like, like, phone ? phone : phoneLike);
-
-    res.json({
-      users: rows.map((u) => ({
-        ...publicUser(u),
-        online: isOnline(u.id),
-        isContact: isContact(req.user.id, u.id),
-      })),
+    const rows = await searchUsers({
+      excludeId: req.user.id,
+      like,
+      phoneLike: phone || phoneLike,
     });
+
+    const users = [];
+    for (const user of rows) {
+      users.push({
+        ...publicUser(user),
+        online: isOnline(user.id),
+        isContact: await isContact(req.user.id, user.id),
+      });
+    }
+    res.json({ users });
   })
 );
 
 router.get(
   '/:id',
-  route((req, res) => {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(Number(req.params.id));
+  route(async (req, res) => {
+    const user = await getUserById(Number(req.params.id));
     if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
     res.json({
       user: {
         ...publicUser(user),
         online: isOnline(user.id),
-        isContact: isContact(req.user.id, user.id),
+        isContact: await isContact(req.user.id, user.id),
       },
     });
   })

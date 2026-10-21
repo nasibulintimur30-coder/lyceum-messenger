@@ -1,36 +1,24 @@
-/** Загрузка изображений: только картинки, до 8 МБ, в server/data/uploads. */
+/**
+ * Загрузка изображений.
+ *
+ * Файлы хранятся в базе, а не на диске: на бесплатных хостингах диск
+ * сервера обнуляется при каждом перезапуске, и картинки пропадали бы.
+ */
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'node:path';
-import fs from 'node:fs';
 import crypto from 'node:crypto';
 
-import { MAX_UPLOAD_SIZE, UPLOAD_DIR } from '../config.js';
+import { MAX_UPLOAD_SIZE } from '../config.js';
 import { authRequired } from '../auth.js';
+import { deleteUpload, getUpload, saveUpload } from '../db.js';
 import { route } from '../http.js';
 
 const router = Router();
 
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']);
 
-const EXT = {
-  'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/gif': '.gif',
-  'image/webp': '.webp',
-  'image/svg+xml': '.svg',
-};
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const ext = EXT[file.mimetype] || path.extname(file.originalname) || '.bin';
-    cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED.has(file.mimetype)) {
@@ -40,11 +28,12 @@ const upload = multer({
   },
 });
 
+/** POST /api/upload — загрузка картинки (нужна авторизация). */
 router.post(
   '/',
   authRequired,
   route((req, res) => {
-    upload.single('file')(req, res, (err) => {
+    upload.single('file')(req, res, async (err) => {
       if (err) {
         const message =
           err.code === 'LIMIT_FILE_SIZE'
@@ -53,18 +42,45 @@ router.post(
         return res.status(400).json({ error: message });
       }
       if (!req.file) return res.status(400).json({ error: 'Файл не выбран' });
-      res.json({ url: `/uploads/${req.file.filename}`, size: req.file.size });
+
+      try {
+        const id = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+        const url = await saveUpload({
+          id,
+          mime: req.file.mimetype,
+          name: req.file.originalname || id,
+          data: new Uint8Array(req.file.buffer),
+        });
+        res.json({ url, size: req.file.size });
+      } catch (error) {
+        console.error('[upload]', error);
+        res.status(500).json({ error: 'Не удалось сохранить файл' });
+      }
     });
   })
 );
 
+/** GET /api/upload/:id — отдача картинки (без авторизации, чтобы работал <img>). */
+router.get(
+  '/:id',
+  route(async (req, res) => {
+    const file = await getUpload(req.params.id);
+    if (!file) return res.status(404).json({ error: 'Файл не найден' });
+
+    res.setHeader('Content-Type', file.mime);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(file.data));
+  })
+);
+
+/** DELETE /api/upload?url=/api/upload/<id> */
 router.delete(
   '/',
   authRequired,
-  route((req, res) => {
-    const name = path.basename(String(req.query?.url || ''));
-    const target = path.join(UPLOAD_DIR, name);
-    if (name && fs.existsSync(target)) fs.unlinkSync(target);
+  route(async (req, res) => {
+    const url = String(req.query?.url || '');
+    const id = url.split('/').pop();
+    if (id) await deleteUpload(id);
     res.json({ ok: true });
   })
 );

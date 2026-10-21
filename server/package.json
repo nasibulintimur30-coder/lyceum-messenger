@@ -12,6 +12,7 @@
     "test:cross": "node test/cross-origin.test.mjs"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "express": "^4.21.2",

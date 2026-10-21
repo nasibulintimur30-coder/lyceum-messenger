@@ -14,17 +14,17 @@ import { num, route } from '../http.js';
 const router = Router({ mergeParams: true });
 router.use(authRequired);
 
-/** GET /api/chats/:chatId/messages?limit=50&before=<id> */
+/** GET /api/chats/:chatId/messages */
 router.get(
   '/',
-  route((req, res) => {
+  route(async (req, res) => {
     const chatId = num(req.params.chatId);
-    if (!isMember(chatId, req.user.id)) {
+    if (!(await isMember(chatId, req.user.id))) {
       return res.status(404).json({ error: 'Чат не найден' });
     }
     const limit = Math.min(Math.max(num(req.query?.limit, 50), 1), 100);
     const before = req.query?.before ? num(req.query.before) : null;
-    const messages = listMessages(chatId, { limit, before });
+    const messages = await listMessages(chatId, { limit, before });
     res.json({ messages, hasMore: messages.length === limit });
   })
 );
@@ -32,9 +32,9 @@ router.get(
 /** POST /api/chats/:chatId/messages — REST-фолбэк для отправки сообщения. */
 router.post(
   '/',
-  route((req, res) => {
+  route(async (req, res) => {
     const chatId = num(req.params.chatId);
-    if (!isMember(chatId, req.user.id)) {
+    if (!(await isMember(chatId, req.user.id))) {
       return res.status(404).json({ error: 'Чат не найден' });
     }
 
@@ -49,14 +49,14 @@ router.post(
       return res.status(400).json({ error: 'Не найдено вложение' });
     }
 
-    const row = insertMessage({
+    const row = await insertMessage({
       chatId,
       senderId: req.user.id,
       type,
       body,
       attachmentPath: attachment,
     });
-    const members = readMembers(chatId);
+    const members = await readMembers(chatId);
     const message = shapeMessage(row, members);
 
     const io = getIo();

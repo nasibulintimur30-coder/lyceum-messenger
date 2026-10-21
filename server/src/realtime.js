@@ -1,5 +1,5 @@
 /**
- * WebSocket-слой: доставка сообщений, статусы прочтения, присутствие, набор текста.
+ * WebSocket-слой: доставка сообщений, статусы, присутствие, набор текста.
  *
  * Каждый сокет авторизуется JWT-токеном из handshake. Клиент подписывается
  * на комнату `user:<id>` — туда приходят события, адресованные конкретному
@@ -10,12 +10,13 @@ import { Server } from 'socket.io';
 import { CORS_ORIGIN, MAX_MESSAGE_LENGTH } from './config.js';
 import { verifyToken } from './auth.js';
 import {
-  db,
+  chatIdsFor,
   getUserById,
   insertMessage,
   isMember,
-  memberIds,
+  listContacts,
   markRead,
+  memberIds,
   publicUser,
   readMembers,
   shapeMessage,
@@ -41,20 +42,17 @@ export function onlineUserIds() {
 }
 
 /** Кому показывать presence: участники общих чатов + контакты. */
-function relatedUserIds(userId) {
+async function relatedUserIds(userId) {
   const ids = new Set();
-  for (const row of db
-    .prepare(
-      `SELECT m2.user_id AS id FROM chat_members m1
-         JOIN chat_members m2 ON m2.chat_id = m1.chat_id
-        WHERE m1.user_id = ? AND m2.user_id <> ?`
-    )
-    .all(userId, userId)) {
-    ids.add(row.id);
+
+  for (const chatId of await chatIdsFor(userId)) {
+    for (const uid of await memberIds(chatId)) {
+      if (uid !== userId) ids.add(uid);
+    }
   }
-  for (const row of db.prepare('SELECT contact_id AS id FROM contacts WHERE user_id = ?').all(userId)) {
-    ids.add(row.id);
-  }
+
+  for (const contact of await listContacts(userId)) ids.add(contact.id);
+
   return [...ids];
 }
 
@@ -71,10 +69,10 @@ function setOnline(userId, socketId, value) {
 }
 
 /** Отправляет событие «печатает…» всем участникам чата, кроме отправителя. */
-export function broadcastTyping(chatId, userId, typing) {
+export async function broadcastTyping(chatId, userId, typing) {
   const io = ioRef;
   if (!io) return;
-  for (const uid of memberIds(chatId)) {
+  for (const uid of await memberIds(chatId)) {
     if (uid === userId) continue;
     io.to(`user:${uid}`).emit('chat:typing', { chatId, userId, typing: !!typing });
   }
@@ -89,85 +87,107 @@ export function attachRealtime(httpServer) {
     maxHttpBufferSize: 20 * 1024 * 1024,
   });
 
-  io.use((socket, next) => {
-    const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error('unauthorized'));
+  io.use(async (socket, next) => {
+    try {
+      const token = socket.handshake.auth?.token;
+      if (!token) return next(new Error('unauthorized'));
 
-    const payload = verifyToken(token);
-    if (!payload) return next(new Error('unauthorized'));
+      const payload = verifyToken(token);
+      if (!payload) return next(new Error('unauthorized'));
 
-    const user = getUserById(payload.id);
-    if (!user) return next(new Error('unauthorized'));
+      const user = await getUserById(payload.id);
+      if (!user) return next(new Error('unauthorized'));
 
-    socket.data.user = publicUser(user);
-    next();
+      socket.data.user = publicUser(user);
+      next();
+    } catch (error) {
+      next(error);
+    }
   });
 
   ioRef = io;
 
   io.on('connection', (socket) => {
     const me = socket.data.user;
-    socket.join(`user:${me.id}`);
-    setOnline(me.id, socket.id, true);
-    touchLastSeen(me.id);
 
-    // Сообщаем знакомым, что пользователь в сети
-    const presence = { userId: me.id, online: true, lastSeen: Date.now() };
-    for (const uid of relatedUserIds(me.id)) io.to(`user:${uid}`).emit('presence', presence);
-    io.to(`user:${me.id}`).emit('presence', presence);
+    const setup = async () => {
+      socket.join(`user:${me.id}`);
+      setOnline(me.id, socket.id, true);
+      await touchLastSeen(me.id);
 
-    socket.on('chat:join', ({ chatId } = {}) => {
-      if (chatId && isMember(chatId, me.id)) socket.join(`chat:${chatId}`);
+      // Сообщаем знакомым, что пользователь в сети
+      const presence = { userId: me.id, online: true, lastSeen: Date.now() };
+      for (const uid of await relatedUserIds(me.id)) {
+        io.to(`user:${uid}`).emit('presence', presence);
+      }
+      io.to(`user:${me.id}`).emit('presence', presence);
+    };
+
+    setup().catch((error) => console.error('[socket] setup', error));
+
+    socket.on('chat:join', async ({ chatId } = {}) => {
+      if (chatId && (await isMember(chatId, me.id))) socket.join(`chat:${chatId}`);
     });
 
-    socket.on('message:send', (payload = {}, ack) => {
+    socket.on('message:send', async (payload = {}, ack) => {
       const reply = (value) => {
         if (typeof ack === 'function') ack(value);
       };
 
-      const { chatId, type = 'text', body = '', attachment = null, clientId = null } = payload || {};
-      if (!chatId || !isMember(chatId, me.id)) return reply({ error: 'Нет доступа к чату' });
+      try {
+        const { chatId, type = 'text', body = '', attachment = null, clientId = null } = payload || {};
+        if (!chatId || !(await isMember(chatId, me.id))) {
+          return reply({ error: 'Нет доступа к чату' });
+        }
 
-      const text = String(body || '').slice(0, MAX_MESSAGE_LENGTH);
-      const kind = type === 'image' ? 'image' : 'text';
+        const text = String(body || '').slice(0, MAX_MESSAGE_LENGTH);
+        const kind = type === 'image' ? 'image' : 'text';
 
-      if (kind === 'text' && !text.trim()) return reply({ error: 'Пустое сообщение' });
-      if (kind === 'image' && !attachment) return reply({ error: 'Не найдено вложение' });
+        if (kind === 'text' && !text.trim()) return reply({ error: 'Пустое сообщение' });
+        if (kind === 'image' && !attachment) return reply({ error: 'Не найдено вложение' });
 
-      const row = insertMessage({
-        chatId,
-        senderId: me.id,
-        type: kind,
-        body: text,
-        attachmentPath: kind === 'image' ? attachment : null,
-      });
-      const members = readMembers(chatId);
-      const message = { ...shapeMessage(row, members), clientId };
+        const row = await insertMessage({
+          chatId,
+          senderId: me.id,
+          type: kind,
+          body: text,
+          attachmentPath: kind === 'image' ? attachment : null,
+        });
+        const members = await readMembers(chatId);
+        const message = { ...shapeMessage(row, members), clientId };
 
-      for (const uid of memberIds(chatId)) io.to(`user:${uid}`).emit('message:new', message);
-      reply({ ok: true, message });
+        for (const uid of await memberIds(chatId)) {
+          io.to(`user:${uid}`).emit('message:new', message);
+        }
+        reply({ ok: true, message });
+      } catch (error) {
+        console.error('[socket] message:send', error);
+        reply({ error: 'Не удалось отправить сообщение' });
+      }
     });
 
-    socket.on('message:read', ({ chatId, messageId } = {}) => {
-      if (!chatId || !messageId || !isMember(chatId, me.id)) return;
-      markRead(chatId, me.id, messageId);
-      for (const uid of memberIds(chatId)) {
+    socket.on('message:read', async ({ chatId, messageId } = {}) => {
+      if (!chatId || !messageId || !(await isMember(chatId, me.id))) return;
+      await markRead(chatId, me.id, messageId);
+      for (const uid of await memberIds(chatId)) {
         if (uid === me.id) continue;
         io.to(`user:${uid}`).emit('message:read', { chatId, userId: me.id, messageId });
       }
     });
 
-    socket.on('chat:typing', ({ chatId, typing = false } = {}) => {
-      if (!chatId || !isMember(chatId, me.id)) return;
-      broadcastTyping(chatId, me.id, typing);
+    socket.on('chat:typing', async ({ chatId, typing = false } = {}) => {
+      if (!chatId || !(await isMember(chatId, me.id))) return;
+      await broadcastTyping(chatId, me.id, typing);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       setOnline(me.id, socket.id, false);
       if (isOnline(me.id)) return;
-      touchLastSeen(me.id);
+      await touchLastSeen(me.id);
       const presence = { userId: me.id, online: false, lastSeen: Date.now() };
-      for (const uid of relatedUserIds(me.id)) io.to(`user:${uid}`).emit('presence', presence);
+      for (const uid of await relatedUserIds(me.id)) {
+        io.to(`user:${uid}`).emit('presence', presence);
+      }
     });
   });
 

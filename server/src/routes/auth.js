@@ -26,12 +26,12 @@ router.post(
     if (!displayName || displayName.length > 32) {
       return res.status(400).json({ error: 'Имя: от 1 до 32 символов' });
     }
-    if (getUserByPhone(phone)) {
+    if (await getUserByPhone(phone)) {
       return res.status(409).json({ error: 'Этот номер уже зарегистрирован' });
     }
 
     const passwordHash = await hashPassword(password);
-    const user = createUser({ phone, passwordHash, displayName });
+    const user = await createUser({ phone, passwordHash, displayName });
     res.json({ token: signToken(user), user: publicUser(user) });
   })
 );
@@ -42,7 +42,7 @@ router.post(
     const phone = normalizePhone(req.body?.phone);
     const password = String(req.body?.password || '');
 
-    const user = phone ? getUserByPhone(phone) : null;
+    const user = phone ? await getUserByPhone(phone) : null;
     if (!user || !(await verifyPassword(password, user.password_hash))) {
       return res.status(401).json({ error: 'Неверный номер телефона или пароль' });
     }

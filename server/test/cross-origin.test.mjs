@@ -75,7 +75,7 @@ const { migrate, closeDatabase } = await import('../src/db.js');
 const { createApp } = await import('../src/app.js');
 const { attachRealtime } = await import('../src/realtime.js');
 
-migrate();
+await migrate();
 
 const apiServer = http.createServer(createApp());
 attachRealtime(apiServer);
@@ -210,7 +210,7 @@ staticServer.closeAllConnections?.();
 apiServer.closeAllConnections?.();
 staticServer.close();
 apiServer.close();
-closeDatabase();
+await closeDatabase();
 fs.rmSync(TMP_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 const failed = results.filter((r) => !r.ok);

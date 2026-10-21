@@ -21,7 +21,7 @@ const { migrate, closeDatabase } = await import('../src/db.js');
 const { createApp } = await import('../src/app.js');
 const { attachRealtime } = await import('../src/realtime.js');
 
-migrate();
+await migrate();
 
 const server = http.createServer(createApp());
 attachRealtime(server);
@@ -188,7 +188,7 @@ sockB.close();
 // Даём обработчикам disconnect отработать до закрытия базы
 await wait(300);
 server.close();
-closeDatabase();
+await closeDatabase();
 fs.rmSync(TMP_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 const failed = results.filter((r) => !r.ok);

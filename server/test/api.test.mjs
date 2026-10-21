@@ -22,7 +22,7 @@ const { migrate, closeDatabase } = await import('../src/db.js');
 const { createApp } = await import('../src/app.js');
 const { attachRealtime } = await import('../src/realtime.js');
 
-migrate();
+await migrate();
 
 const server = http.createServer(createApp());
 attachRealtime(server);
@@ -260,7 +260,32 @@ check('тема видна в профиле', meAfter.data.user?.theme === 'lig
 const form = new FormData();
 form.append('file', new Blob([Buffer.from('bytes')], { type: 'image/png' }), 'pic.png');
 const upload = await call('POST', '/api/upload', { token: tokenA, raw: form });
-check('POST /api/upload', upload.status === 200 && String(upload.data.url || '').startsWith('/uploads/'));
+check(
+  'POST /api/upload',
+  upload.status === 200 && String(upload.data.url || '').startsWith('/api/upload/'),
+  `status ${upload.status} url ${upload.data.url || ''}`
+);
+
+/* Файл должен отдаваться по ссылке без авторизации (для <img>) */
+const fileUrl = upload.data.url;
+const downloaded = await fetch(`${BASE}${fileUrl}`);
+const downloadedBody = await downloaded.text();
+check(
+  'загруженный файл отдаётся по ссылке',
+  downloaded.status === 200 && downloadedBody === 'bytes',
+  `status ${downloaded.status}`
+);
+
+/* Ссылка на файл подходит как аватар */
+const avatarFromUpload = await call('PATCH', '/api/users/me', {
+  token: tokenA,
+  body: { avatar: fileUrl },
+});
+check(
+  'ссылка на загруженный файл принимается как аватар',
+  avatarFromUpload.status === 200 && avatarFromUpload.data.user?.avatar === fileUrl,
+  `status ${avatarFromUpload.status}`
+);
 
 const badUpload = new FormData();
 badUpload.append('file', new Blob([Buffer.from('txt')], { type: 'text/plain' }), 'x.txt');
@@ -325,7 +350,7 @@ check(
 
 /* --- итог --- */
 server.close();
-closeDatabase();
+await closeDatabase();
 fs.rmSync(TMP_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 const failed = results.filter((r) => !r.ok);

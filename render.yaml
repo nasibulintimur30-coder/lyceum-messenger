@@ -5,16 +5,19 @@
 # https://lyceum-messenger.onrender.com — его нужно вписать в apiBase
 # в файле web/config.js.
 #
-# ВАЖНО: на бесплатном тарифе диск эфемерный, база SQLite будет стираться
-# при каждом перезапуске. Для постоянных данных нужен платный инстанс
-# с диском (disk: в разделе disk) или внешняя база.
+# Карта для оплаты не нужна: тариф free работает без неё.
+#
+# ВАЖНО про данные: на free-тарифе диск сервера обнуляется при каждом
+# перезапуске, поэтому база и картинки хранятся в облаке Turso
+# (переменные TURSO_URL / TURSO_AUTH_TOKEN ниже). Без них сообщения
+# пропадут после перезапуска.
 
 services:
   - type: web
     name: lyceum-messenger
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /api/config
     envVars:
       - key: NODE_ENV
@@ -27,8 +30,9 @@ services:
         generateValue: true
       # Домен фронтенда на Netlify — впишите свой
       - key: CORS_ORIGIN
-        value: https://example.netlify.app
-    disk:
-      name: lyceum-data
-      mountPath: /app/server/data
-      sizeGB: 1
+        value: https://lyceum-messenger.netlify.app
+      # Облачная база Turso: создайте её на https://turso.tech
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false

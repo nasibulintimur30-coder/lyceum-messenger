@@ -3,6 +3,7 @@ server/data/
 server/data/uploads/*
 !server/data/uploads/.gitkeep
 lyceum-empty.db
+lyceum-export.db
 .env
 .env.*
 *.log

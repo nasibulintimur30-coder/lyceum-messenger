@@ -11,6 +11,7 @@
     "build": "node tools/build.mjs",
     "icons": "node tools/make-icons.mjs",
     "sync-client": "node tools/sync-client.mjs",
+    "empty-db": "node tools/empty-db.mjs",
     "tunnel": "node tools/tunnel-watch.mjs",
     "test": "npm --prefix server test",
     "test:ui": "npm --prefix server run test:ui",

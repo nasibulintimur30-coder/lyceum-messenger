@@ -195,7 +195,7 @@ const avatarSrc = await browser.evaluate(
 );
 check(
   'аватар грузится с адреса бэкенда',
-  avatarSrc.startsWith(`${API_ORIGIN}/uploads/`),
+  avatarSrc.startsWith(`${API_ORIGIN}/api/upload/`),
   avatarSrc || 'не найден'
 );
 

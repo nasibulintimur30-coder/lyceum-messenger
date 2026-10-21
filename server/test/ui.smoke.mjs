@@ -189,7 +189,11 @@ check('картинка прикрепилась и показалась пре�
 const previewSrc = await browser.evaluate(
   "document.querySelector('.composer__preview img')?.getAttribute('src') || ''"
 );
-check('превью ссылается на загруженный файл', previewSrc.includes('/uploads/'), previewSrc);
+check(
+  'превью ссылается на загруженный файл',
+  previewSrc.includes('/api/upload/'),
+  previewSrc
+);
 await browser.shot(path.join(OUT, '10-attached.png'));
 console.log(`  снимок: ${path.join(OUT, '10-attached.png')}`);
 

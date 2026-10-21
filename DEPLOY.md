@@ -1,6 +1,73 @@
 # Деплой: фронтенд на Netlify, бэкенд на Node-хосте
 
-## Самый простой бесплатный путь (3 шага)
+## Вариант 0 — бесплатно и без карты: Render + Turso
+
+Схема: статика на **Netlify**, бэкенд на **Render** (free-тариф, карта не
+нужна), данные — в облачной базе **Turso** (тоже бесплатно, карта не нужна).
+
+> Почему база в облаке, а не файл на сервере: на free-тарифе Render диск
+> обнуляется при каждом перезапуске, и сообщения пропадали бы. С Turso данные
+> живут в облаке. Загруженные картинки тоже хранятся в базе.
+
+**Шаг 1. Создать базу Turso (5 минут)**
+
+1. <https://turso.tech> → Sign up (через GitHub или почту)
+2. **Create database** → имя, например `lyceum`
+3. Открой базу → **Keys** → **Create API key** → скопируй токен
+4. Запиши два значения: URL базы (`libsql://lyceum-xxxx.turso.io`) и токен
+
+**Шаг 2. Залить проект в GitHub**
+
+Render берёт код из репозитория, поэтому нужен GitHub:
+
+```powershell
+cd D:\Projects\Project2
+git remote add origin git@github.com:<твой-логин>/lyceum-messenger.git
+git push -u origin main
+```
+
+Если GitHub ругается на права — добавьте SSH-ключ:
+<https://github.com/settings/keys> → **New SSH key** → вставьте содержимое файла
+`C:\Users\nasib\.ssh\id_ed25519.pub`.
+
+**Шаг 3. Создать сервис на Render (5 минут)**
+
+1. <https://render.com> → New → **Blueprint** → выбрать репозиторий
+2. Render сам прочитает `render.yaml`: Docker, health check `/api/config`, тариф free
+3. В Environment добавьте:
+   - `TURSO_URL` = `libsql://lyceum-xxxx.turso.io`
+   - `TURSO_AUTH_TOKEN` = токен из шага 1
+   - `CORS_ORIGIN` = `https://lyceum-messenger.netlify.app`
+4. **Apply** → дождаться деплоя (2–3 минуты) → получите адрес
+   `https://lyceum-messenger.onrender.com`
+
+**Шаг 4. Связать с Netlify**
+
+```powershell
+cd D:\Projects\Project2
+notepad web\config.js
+```
+```js
+window.LYCEUM_CONFIG = {
+  apiBase: 'https://lyceum-messenger.onrender.com',
+  socketBase: '',
+};
+```
+```powershell
+npm run deploy
+```
+
+**Нюанс free-тарифа Render:** инстанс засыпает после 15 минут простоя и
+просыпается ~30–60 секунд. Первое сообщение после паузы уйдёт с задержкой.
+Для круглосуточной работы нужен платный инстанс (~$7/мес) — код менять не нужно.
+
+**Проверка:**
+
+```powershell
+curl.exe https://lyceum-messenger.onrender.com/api/config
+```
+
+## Самый простой бесплатный путь на своём VPS (3 шага)
 
 Поднять всё на бесплатном VPS (Oracle Cloud Always Free — 1 ГБ RAM навсегда
 бесплатно) одной командой-скриптом. Подробности — в разделе «Вариант B».

@@ -12,6 +12,6 @@
  * ?api=https://ваш-бэкенд — адрес сохранится в localStorage браузера.
  */
 window.LYCEUM_CONFIG = {
-  apiBase: '',
+  apiBase: 'https://lyceum-messenger.onrender.com',
   socketBase: '',
 };

@@ -52,59 +52,105 @@ function renderTab() {
   }
 }
 
+/**
+ * Узлы списка чатов переиспользуются: при новом сообщении обновляется только
+ * текст и счётчик, а не пересобирается весь список — иначе боковая панель
+ * мигает при каждом сообщении.
+ */
+const chatNodes = new Map();
+
+function createChatNode(chat) {
+  const title = el('span', { text: chat.title });
+  const previewText = el('span', { class: 'list-item__preview' });
+  const time = el('span', { class: 'list-item__time' });
+  const badge = el('span', { class: 'badge' });
+  const avatar = avatarNode({ title: chat.title, avatar: assetUrl(chat.avatar) });
+
+  const node = el(
+    'button',
+    {
+      class: 'list-item',
+      type: 'button',
+      onclick: () => openChat(chat.id),
+    },
+    avatar,
+    el(
+      'span',
+      { class: 'list-item__body' },
+      el(
+        'span',
+        { class: 'list-item__title' },
+        title,
+        chat.type === 'group' ? el('span', { class: 'muted', text: '· группа' }) : null
+      ),
+      previewText
+    ),
+    el('span', { class: 'list-item__meta' }, time, badge)
+  );
+
+  return { node, avatar, title, previewText, time, badge, avatarKey: '' };
+}
+
 function renderChats() {
   const root = qs('#list-chats');
   if (!root) return;
-  clear(root);
+
+  const me = state.user?.id;
 
   if (!state.chats.length) {
+    clear(root);
     root.append(
       el('div', {
         class: 'list__empty',
         text: 'Пока нет чатов. Найдите человека через поиск или контакты.',
       })
     );
+    chatNodes.clear();
     return;
   }
 
-  const me = state.user?.id;
+  // Убираем заглушку «нет чатов», если она была
+  for (const node of [...root.children]) {
+    if (node.classList.contains('list__empty')) node.remove();
+  }
+
+  const seen = new Set();
+
   for (const chat of state.chats) {
+    seen.add(chat.id);
+    let refs = chatNodes.get(chat.id);
+    if (!refs) {
+      refs = createChatNode(chat);
+      chatNodes.set(chat.id, refs);
+    }
+
     const other = chat.members?.find((m) => m.id !== me);
     const online = chat.type === 'dm' ? isOnline(other?.id) : false;
+    const avatarKey = `${chat.avatar || ''}|${chat.title}|${online}`;
 
-    root.append(
-      el(
-        'button',
-        {
-          class: `list-item${chat.id === state.activeChatId ? ' is-active' : ''}`,
-          type: 'button',
-          onclick: () => openChat(chat.id),
-        },
-        avatarNode({ title: chat.title, avatar: assetUrl(chat.avatar), online }),
-        el(
-          'span',
-          { class: 'list-item__body' },
-          el(
-            'span',
-            { class: 'list-item__title' },
-            el('span', { text: chat.title }),
-            chat.type === 'group' ? el('span', { class: 'muted', text: '· группа' }) : null
-          ),
-          el('span', { class: 'list-item__preview', text: preview(chat.lastMessage, me) })
-        ),
-        el(
-          'span',
-          { class: 'list-item__meta' },
-          el('span', {
-            class: 'list-item__time',
-            text: chat.lastMessage ? fmtTime(chat.lastMessage.createdAt) : '',
-          }),
-          chat.unread
-            ? el('span', { class: 'badge', text: chat.unread > 99 ? '99+' : String(chat.unread) })
-            : null
-        )
-      )
-    );
+    if (refs.avatarKey !== avatarKey) {
+      refs.avatarKey = avatarKey;
+      const fresh = avatarNode({ title: chat.title, avatar: assetUrl(chat.avatar), online });
+      refs.node.replaceChild(fresh, refs.avatar);
+      refs.avatar = fresh;
+    }
+
+    refs.title.textContent = chat.title;
+    refs.previewText.textContent = preview(chat.lastMessage, me);
+    refs.time.textContent = chat.lastMessage ? fmtTime(chat.lastMessage.createdAt) : '';
+    refs.badge.textContent = chat.unread > 99 ? '99+' : String(chat.unread || '');
+    refs.badge.hidden = !chat.unread;
+    refs.node.classList.toggle('is-active', chat.id === state.activeChatId);
+
+    // Перемещаем узел в конец — порядок обновится без пересоздания
+    root.append(refs.node);
+  }
+
+  // Убираем чаты, которых больше нет
+  for (const [id, refs] of chatNodes) {
+    if (seen.has(id)) continue;
+    refs.node.remove();
+    chatNodes.delete(id);
   }
 }
 

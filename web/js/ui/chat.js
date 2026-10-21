@@ -1,6 +1,6 @@
 /** Экран чата: история сообщений, композер, отметки о прочтении, набор текста. */
 import { api, assetUrl } from '../api.js';
-import { el, clear, qs, fmtDay, fmtTime, plural } from '../dom.js';
+import { el, clear, qs, fmtDay, fmtTime, initials, plural } from '../dom.js';
 import {
   state,
   on,
@@ -108,7 +108,7 @@ export function initChat() {
   on('messages', ({ chatId }) => {
     if (chatId !== state.activeChatId) return;
     const atBottom = isNearBottom();
-    renderMessages();
+    updateMessages();
     if (atBottom) scrollToBottom();
   });
 
@@ -152,10 +152,14 @@ function renderHeader(chat) {
       : `${count} ${plural(count, 'участник', 'участника', 'участников')}`;
   }
 
-  clear(avatarBox);
-  avatarBox.append(
-    avatarNode({ title: chat.title, avatar: assetUrl(chat.avatar), className: 'chat__avatar' })
-  );
+  // Содержимое аватара обновляем только если оно изменилось — иначе шапка мигает
+  const avatarKey = `${chat.avatar || ''}|${chat.title}`;
+  if (avatarBox.dataset.avatarKey !== avatarKey) {
+    avatarBox.dataset.avatarKey = avatarKey;
+    clear(avatarBox);
+    if (chat.avatar) avatarBox.append(el('img', { src: assetUrl(chat.avatar), alt: '' }));
+    else avatarBox.append(el('span', { text: initials(chat.title) }));
+  }
 }
 
 function lastSeenText(ts) {
@@ -176,6 +180,18 @@ const dayKey = (ts) => {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 };
 
+/**
+ * Что сейчас нарисовано в списке.
+ * Нужно, чтобы добавлять новое сообщение точечно, а не пересобирать весь
+ * список: полная перерисовка запускает анимацию появления у всех пузырей
+ * сразу и выглядит как перезагрузка страницы.
+ */
+let renderedChatId = null;
+let renderedMessages = [];
+/** id сообщения → элемент с отметками о прочтении (обновляется на месте). */
+const renderedTicks = new Map();
+
+/** Полная перерисовка списка — при смене чата и подгрузке истории. */
 function renderMessages() {
   const box = qs('#messages');
   const chatId = state.activeChatId;
@@ -183,6 +199,9 @@ function renderMessages() {
 
   const list = state.messages.get(chatId) || [];
   clear(box);
+  renderedChatId = chatId;
+  renderedMessages = [];
+  renderedTicks.clear();
 
   if (!list.length) {
     box.append(
@@ -203,7 +222,59 @@ function renderMessages() {
       previous = null;
     }
     box.append(messageNode(message, previous, chat));
+    renderedMessages.push(message);
     previous = message;
+  }
+}
+
+/**
+ * Точечное обновление: добавляет только новые сообщения и обновляет
+ * отметки о прочтении, не трогая уже нарисованные пузыри.
+ */
+function updateMessages() {
+  const chatId = state.activeChatId;
+  if (!chatId) return;
+
+  const list = state.messages.get(chatId) || [];
+
+  // Другой чат или список изменился не только добавлением — рисуем заново
+  const isSameChat = renderedChatId === chatId;
+  const isExtension =
+    isSameChat &&
+    renderedMessages.length <= list.length &&
+    renderedMessages.every((message, index) => list[index]?.id === message.id);
+
+  if (!isExtension) {
+    renderMessages();
+    return;
+  }
+
+  const known = new Set(renderedMessages.map((message) => message.id));
+  const fresh = list.filter((message) => !known.has(message.id));
+
+  if (fresh.length) {
+    const box = qs('#messages');
+    const chat = getChat(chatId);
+    let previous = renderedMessages[renderedMessages.length - 1] || null;
+    let previousDay = previous ? dayKey(previous.createdAt) : '';
+
+    for (const message of fresh) {
+      const day = dayKey(message.createdAt);
+      if (day !== previousDay) {
+        box.append(el('div', { class: 'day-sep', text: fmtDay(message.createdAt) }));
+        previousDay = day;
+        previous = null;
+      }
+      box.append(messageNode(message, previous, chat));
+      renderedMessages.push(message);
+      previous = message;
+    }
+  }
+
+  // Обновляем галочки прочтения на месте
+  for (const message of list) {
+    const ticks = renderedTicks.get(message.id);
+    if (ticks) ticks.replaceWith(ticksNode(message));
   }
 }
 
@@ -226,6 +297,14 @@ function messageNode(message, previous, chat) {
         )
       : el('div', { class: 'bubble', text: message.body });
 
+  const meta = el('div', { class: 'bubble__meta' }, el('span', { text: fmtTime(message.createdAt) }));
+
+  if (own) {
+    const ticks = ticksNode(message);
+    renderedTicks.set(message.id, ticks);
+    meta.append(ticks);
+  }
+
   return el(
     'div',
     { class: `msg${own ? ' msg--own' : ''}` },
@@ -237,12 +316,7 @@ function messageNode(message, previous, chat) {
       { class: 'msg__col' },
       showAuthor ? el('div', { class: 'msg__author', text: author?.displayName || '' }) : null,
       bubble,
-      el(
-        'div',
-        { class: 'bubble__meta' },
-        el('span', { text: fmtTime(message.createdAt) }),
-        own ? ticksNode(message) : null
-      )
+      meta
     )
   );
 }

@@ -152,6 +152,33 @@ await sleep(1500);
 const bubbleText = await browser.evaluate("document.querySelector('#messages .bubble')?.textContent || ''");
 check('сообщение отправлено и отрисовано', bubbleText.includes('Привет из UI-теста'), bubbleText);
 
+/* Плавность: второй пузырь не должен пересоздавать первый.
+   Помечаем нарисованный пузырь — при перерисовке списка метка исчезнет. */
+await browser.evaluate(`
+  const first = document.querySelector('#messages .bubble');
+  if (first) first.dataset.marker = 'keep';
+  true;
+`);
+
+await browser.evaluate(`
+  {
+    const field = document.querySelector('#composer-input');
+    field.value = 'Второе сообщение';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#composer-send').click();
+  }
+  true;
+`);
+await sleep(1500);
+
+const markerKept = await browser.evaluate(
+  "document.querySelector('#messages .bubble')?.dataset.marker === 'keep'"
+);
+check('старые сообщения не перерисовываются (нет мигания)', markerKept === true);
+
+const bubbleCount = await browser.evaluate("document.querySelectorAll('#messages .bubble').length");
+check('оба пузыря на месте', bubbleCount === 2, `пузырей ${bubbleCount}`);
+
 const ownClass = await browser.evaluate("document.querySelector('#messages .msg')?.className || ''");
 check('своё сообщение выровнено вправо', ownClass.includes('msg--own'), ownClass);
 await shot('04-message-sent');
@@ -163,8 +190,8 @@ const peerMessages = await (
   })
 ).json();
 check(
-  'сообщение дошло до получателя',
-  peerMessages.messages?.length === 1,
+  'сообщения дошли до получателя',
+  peerMessages.messages?.length === 2,
   `у получателя ${peerMessages.messages?.length}`
 );
 
